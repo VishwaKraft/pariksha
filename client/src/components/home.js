@@ -80,12 +80,19 @@ function Home(props) {
         }
       })
       const data = await res.json()
+      
+      if (data.success === false) {
+        toast.error(data.error || "Authentication failed");
+        return;
+      }
+      
       authenticate(data, () => {
         toast.success('Login Successfully!');
         props.history.push("/student/dashboard");
       });
     } catch (error) {
-      toast.error("Error has occured!")
+      console.error('Google OAuth error:', error);
+      toast.error("Authentication error occurred!")
     }
 
   }

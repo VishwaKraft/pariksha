@@ -53,23 +53,62 @@ router.get("/time", (req, res) => {
   });
 });
 
+// Handle OPTIONS preflight requests for Google OAuth
+router.options("/api/v1/auth/google", (req, res) => {
+  res.status(200).end();
+});
+
 // !TODO refactoring is needed
 router.post("/api/v1/auth/google", async (req, res) => {
-  const { token } = req.body
-  const ticket = await client.verifyIdToken({
-    idToken: token,
-    audience: process.env.CLIENT_ID
-  });
-  const data = ticket.getPayload();
-  await User.findOne({ email: data.email }).then(async (user) => {
-    if (user === null) {
-      console.log("creating new user");
-      user = new User({
-        name: data.name,
-        email: data.email,
-        profileUrl: data.picture
-      });
-      await user.save().then(user => {
+  
+  const { token } = req.body;
+  
+  // Check if token exists
+  if (!token) {
+    return res.status(400).json({ 
+      success: false, 
+      error: 'Google ID token is required' 
+    });
+  }
+  
+  try {
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.CLIENT_ID
+    });
+    const data = ticket.getPayload();
+    
+    await User.findOne({ email: data.email }).then(async (user) => {
+      if (user === null) {
+        console.log("creating new user");
+        user = new User({
+          name: data.name,
+          email: data.email,
+          profileUrl: data.picture
+        });
+        await user.save().then(user => {
+          jwt.sign(
+            { user: user._id },
+            process.env.TOKEN_SECRET,
+            { expiresIn: "1d" },
+            async (err, token) => {
+              return res.json({
+                token: token,
+                user: user
+              });
+            }
+          );
+        });
+      } else {
+        console.log("Modifying the user");
+        console.log(user);
+        user.name = data.name;
+        user.email = data.email;
+        user.profileUrl = data.picture;
+        await user.save();
+        if (user.password != undefined) {
+          user.password = "encrpted"
+        }
         jwt.sign(
           { user: user._id },
           process.env.TOKEN_SECRET,
@@ -81,32 +120,18 @@ router.post("/api/v1/auth/google", async (req, res) => {
             });
           }
         );
-      });
-    } else {
-      console.log("Modifying the user");
-      console.log(user);
-      user.name = data.name;
-      user.email = data.email;
-      user.profileUrl = data.picture;
-      await user.save();
-      if (user.password != undefined) {
-        user.password = "encrpted"
       }
-      jwt.sign(
-        { user: user._id },
-        process.env.TOKEN_SECRET,
-        { expiresIn: "1d" },
-        async (err, token) => {
-          return res.json({
-            token: token,
-            user: user
-          });
-        }
-      );
-    }
-  }).catch(err => {
-    res.status(422).json({ success: false, msg: 'Some err occured' })
-  })
+    }).catch(err => {
+      console.error('Database error:', err);
+      res.status(422).json({ success: false, msg: 'Some error occurred' })
+    })
+  } catch (error) {
+    console.error('Google OAuth verification error:', error);
+    res.status(400).json({ 
+      success: false, 
+      error: 'Invalid Google ID token' 
+    });
+  }
 })
 
 module.exports = router;
