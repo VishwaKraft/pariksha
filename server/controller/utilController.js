@@ -20,14 +20,21 @@ exports.validateRequest = (req, res, next) => {
 
 exports.countEntities = async (req, res, next) => {
   try {
-    users = await User.countDocuments();
-    questions = await Question.countDocuments();
-    feedbacks = await Feedback.countDocuments();
-    tests = await Test.countDocuments();
-    responses = await Response.countDocuments();
-    res.status(200).json({ success: true, msg: { users, questions, feedbacks, tests, responses } })
+    const [users, questions, feedbacks, tests, responses] = await Promise.all([
+      User.countDocuments(),
+      Question.countDocuments(),
+      Feedback.countDocuments(),
+      Test.countDocuments(),
+      Response.countDocuments()
+    ]);
+    
+    res.status(200).json({ 
+      success: true, 
+      msg: { users, questions, feedbacks, tests, responses } 
+    });
   } catch (error) {
-    res.status(500).json({ success: false })
+    console.error('Error counting entities:', error);
+    res.status(500).json({ success: false, error: "Internal server error" });
   }
 }
 

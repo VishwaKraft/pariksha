@@ -188,8 +188,18 @@ exports.getQuestionsForTest = async (req, res, next) => {
       temp_questions_arr = [...temp_questions_arr, ...temp];
     }
    
-    (new Response({ userId: ObjectId(req.user), testId: ObjectId(req.test), questions: temp_questions_arr, responses: [] })).save()
 
+try {
+  await (new Response({ 
+    userId: ObjectId(req.user), 
+    testId: ObjectId(req.test), 
+    questions: temp_questions_arr, 
+    responses: [] 
+  })).save();
+} catch (error) {
+  console.error('Error saving response:', error);
+  return res.status(500).json({ error: "Failed to save test session" });
+}
     return res
       .status(200)
       .json({ res_questions: ret_questions, time: req.time });
