@@ -1,5 +1,6 @@
 const Feedback = require("../model/Feedback");
 const User = require("../model/User");
+const { createErrorResponse, createSuccessResponse, errorCodes } = require("../utils/errorHandler");
 
 exports.addFeedback = async (req, res, next) => {
   try {
@@ -13,13 +14,23 @@ exports.addFeedback = async (req, res, next) => {
         feedback,
       });
       payload.save();
-      return res.status(200).json({ success: true });
+      return res.status(200).json(createSuccessResponse(null, "Feedback submitted successfully"));
     }).catch(err => {
-      return res.status(401).json({ success: false });
+      return res.status(401).json(createErrorResponse(
+        errorCodes.AUTHENTICATION_ERROR,
+        "User not found",
+        err.message,
+        401
+      ));
     })
   } catch (err) {
     console.log(err);
-    return res.status(401).json({ success: false });
+    return res.status(401).json(createErrorResponse(
+      errorCodes.INTERNAL_ERROR,
+      "Failed to submit feedback",
+      err.message,
+      401
+    ));
   }
 };
 
@@ -27,24 +38,28 @@ exports.getFeedbacks = async (req, res, next) => {
   const page = parseInt(req.query.page);
   const limit = parseInt(req.query.limit);
   const results = {};
-  results.total = await User.find({}).countDocuments()
+  results.total = await Feedback.find({}).countDocuments()
   try {
     await Feedback.find({}).skip((page - 1) * limit).limit(limit).sort({ name: 1 }).then(result => {
       if (result) {
         results.results = result;
         results.page = req.query.page;
-        res.status(200).json(results);
+        res.status(200).json(createSuccessResponse(results, "Feedbacks retrieved successfully"));
       } else {
-        res.status(404).json({
-          success: false,
-          error: "No Feedback Found"
-        })
+        res.status(404).json(createErrorResponse(
+          errorCodes.NOT_FOUND,
+          "No Feedback Found",
+          null,
+          404
+        ));
       }
     })
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: error.message
-    })
+    res.status(500).json(createErrorResponse(
+      errorCodes.INTERNAL_ERROR,
+      "Failed to retrieve feedbacks",
+      error.message,
+      500
+    ));
   }
 }
