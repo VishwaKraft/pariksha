@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 // import PropTypes from 'prop-types';
 import NavBar from "./nav";
-import { cheatingCounter } from "../helper/Test"
+import { cheatingCounter } from "../helper/Test";
 import { submitAnswer, endTest } from "../helper/Test";
 import { Modal } from "react-bootstrap";
 import Webcam from "react-webcam";
@@ -10,25 +10,47 @@ import CircularProgress from "@material-ui/core/CircularProgress";
 import { Paper, Button } from "@material-ui/core";
 import { withRouter } from "react-router";
 const Questions = (props) => {
-
   const videoRef = useRef(null);
 
-  const [time, setTime] = useState({
-    hour: JSON.parse(localStorage.getItem("time")).hour,
-    minute: JSON.parse(localStorage.getItem("time")).minute,
-    second: JSON.parse(localStorage.getItem("time")).second,
+  const getLocalStorageItem = (key, defaultValue) => {
+    try {
+      const item = localStorage.getItem(key);
+      return item ? JSON.parse(item) : defaultValue;
+    } catch (error) {
+      console.error(`Error parsing localStorage item ${key}:`, error);
+      return defaultValue;
+    }
+  };
+
+  const [time, setTime] = useState(() => {
+    const timeData = getLocalStorageItem("time", {
+      hour: 0,
+      minute: 0,
+      second: 0,
+    });
+    return {
+      hour: timeData.hour ?? 0,
+      minute: timeData.minute ?? 0,
+      second: timeData.second ?? 0,
+    };
   });
 
-  const [values, setValues] = useState({
-    data: JSON.parse(localStorage.getItem("questions")),
-    id: JSON.parse(localStorage.getItem("questions"))[0]._id,
-    option: NaN,
-    save: JSON.parse(localStorage.getItem("save")),
-    mark: JSON.parse(localStorage.getItem("mark")),
-    index: 0,
-    loading: false,
-    isCameraOne: false,
-    error: "",
+  const [values, setValues] = useState(() => {
+    const questions = getLocalStorageItem("questions", []);
+    const save = getLocalStorageItem("save", []);
+    const mark = getLocalStorageItem("mark", []);
+
+    return {
+      data: questions,
+      id: questions[0]?._id ?? null,
+      option: NaN,
+      save: save,
+      mark: mark,
+      index: 0,
+      loading: false,
+      isCameraOne: false,
+      error: "",
+    };
   });
 
   const [show, setShow] = useState(false);
@@ -40,34 +62,24 @@ const Questions = (props) => {
   const handleEndShow = () => setEndShow(true);
 
   const { hour, minute, second } = time;
-  const {
-    data,
-    index,
-    error,
-    loading,
-    isCameraOne,
-    id,
-    option,
-    save,
-    mark,
-  } = values;
+  const { data, id, index, option, save, mark, loading, isCameraOne, error } =
+    values;
 
   const handleChange = (name) => (event) => {
     document.getElementById("errorText").classList.remove("d-block");
     localStorage.setItem("index", event.currentTarget.value);
-    var question = JSON.parse(localStorage.getItem("questions"));
-    var option = JSON.parse(localStorage.getItem("mark")).find(
-      (item) => item.question === question[event.currentTarget.value]._id
+    var question = getLocalStorageItem("questions", []);
+    const index = parseInt(event.currentTarget.value, 10);
+    const questionId = question[index]?._id ?? null;
+    var found = getLocalStorageItem("mark", []).find(
+      (item) => item.question === questionId,
     );
-    if (option === undefined) {
-      option = NaN;
-    } else {
-      option = option.response;
-    }
+    const option = found?.response ?? NaN;
+
     setValues({
       ...values,
-      [name]: parseInt(event.currentTarget.value),
-      id: question[event.currentTarget.value]._id,
+      [name]: parseInt(index),
+      id: questionId,
       option: option,
     });
   };
@@ -86,11 +98,9 @@ const Questions = (props) => {
 
   useEffect(() => {
     if (hour === 0 && minute === 0 && second === 0) {
-      var filteredResponse = JSON.parse(localStorage.getItem("mark")).map(
-        (item) => {
-          return { question: item.question, response: item.response };
-        }
-      );
+      var filteredResponse = getLocalStorageItem("mark", []).map((item) => {
+        return { question: item.question, response: item.response };
+      });
       endTest({ responses: filteredResponse })
         .then((data) => {
           if (!data.success) {
@@ -98,8 +108,8 @@ const Questions = (props) => {
             handleShow();
           } else {
             setValues({ ...values, end: true });
-            cleanup()
-            window.location.href = process.env.PUBLIC_URL + "/student/feedback"
+            cleanup();
+            window.location.href = process.env.PUBLIC_URL + "/student/feedback";
           }
         })
         .catch((error) => {
@@ -116,15 +126,15 @@ const Questions = (props) => {
             hour: hour,
             second: second,
             minute: minute,
-          })
+          }),
         );
       }
       if (second === 0) {
         if (minute === 0) {
           if (hour === 0) {
             setValues({ ...values, error: "Test Has Ended" });
-            cleanup()
-            props.history.push("/student/feedback")
+            cleanup();
+            props.history.push("/student/feedback");
           } else {
             setTime((time) => ({
               hour: time.hour - 1,
@@ -137,7 +147,7 @@ const Questions = (props) => {
                 hour: hour,
                 second: second,
                 minute: minute,
-              })
+              }),
             );
           }
         } else {
@@ -152,7 +162,7 @@ const Questions = (props) => {
               hour: hour,
               second: second,
               minute: minute,
-            })
+            }),
           );
         }
       }
@@ -182,7 +192,7 @@ const Questions = (props) => {
             handleShow();
           } else if (data.message) {
             setValues({ ...values, error: data.message });
-            props.history.push("/student/feedback")
+            props.history.push("/student/feedback");
           } else {
             var arr = save.slice();
             var foundIndex = save.findIndex((x) => x.question === id);
@@ -257,7 +267,7 @@ const Questions = (props) => {
             checked={parseInt(option) === i + 1}
           />
           {value}
-        </li>
+        </li>,
       );
     }
     return (
@@ -265,7 +275,11 @@ const Questions = (props) => {
         <h5 style={{ display: "inline-block" }} className="py-md-3">
           {index + 1}. &nbsp;
           {data[j].question} <br />
-          {data[j].QuestionPic && data[j].QuestionPic !== "" ? <img src={data[j].QuestionPic} alt="question" /> : <></>}
+          {data[j].QuestionPic && data[j].QuestionPic !== "" ? (
+            <img src={data[j].QuestionPic} alt="question" />
+          ) : (
+            <></>
+          )}
         </h5>
         <input type="text" className="d-none" value={id} readonly />
         <ul style={{ listStyle: "none" }}>{options}</ul>
@@ -314,11 +328,9 @@ const Questions = (props) => {
 
   const handleRedirect = (event) => {
     handleClose();
-    var filteredResponse = JSON.parse(localStorage.getItem("mark")).map(
-      (item) => {
-        return { question: item.question, response: item.response };
-      }
-    );
+    var filteredResponse = getLocalStorageItem("mark", []).map((item) => {
+      return { question: item.question, response: item.response };
+    });
     endTest({ responses: filteredResponse })
       .then((data) => {
         if (!data.success) {
@@ -326,8 +338,8 @@ const Questions = (props) => {
           handleShow();
         } else {
           setValues({ ...values, end: true });
-          cleanup()
-          window.location.href = process.env.PUBLIC_URL + "/student/feedback"
+          cleanup();
+          window.location.href = process.env.PUBLIC_URL + "/student/feedback";
         }
       })
       .catch((error) => {
@@ -437,7 +449,11 @@ const Questions = (props) => {
             </div>
           </Paper>
           <div className="mb-4">
-            <Button variant="contained" style={{ width: "100%", background: "#dc3545", color: "white" }} onClick={handleEndShow}>
+            <Button
+              variant="contained"
+              style={{ width: "100%", background: "#dc3545", color: "white" }}
+              onClick={handleEndShow}
+            >
               End Test
             </Button>
           </div>
@@ -471,7 +487,7 @@ const Questions = (props) => {
       {errorMessage()}
       <section className="student" style={{ height: "100vh", margin: "0" }}>
         <div>
-          <NavBar >
+          <NavBar>
             <div
               className="container"
               style={{ height: "70vh", marginTop: "3vh" }}
@@ -498,3 +514,4 @@ function cleanup() {
   localStorage.removeItem("save");
   localStorage.removeItem("mark");
 }
+
