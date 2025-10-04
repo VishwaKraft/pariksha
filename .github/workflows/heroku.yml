@@ -6,6 +6,9 @@ on:
     branches:
     - main # Only trigger on the development branch
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
