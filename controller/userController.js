@@ -1,21 +1,25 @@
 const User = require("../model/User");
 
 exports.addUser = async (req, res) => {
-  const { name, email, password, phoneNumber } = req.body;
-  const emailExist = await User.findOne({ email: email });
-  if (emailExist)
-    return res.status(400).json({ error: "email already exists" });
+  try {
+    const { name, email, password, phoneNumber } = req.body;
+    const emailExist = await User.findOne({ email: email });
+    if (emailExist)
+      return res.status(400).json({ error: "email already exists" });
 
-  user = new User({
-    name,
-    phoneNumber,
-    email,
-    password: password,
-  });
+    const user = new User({
+      name,
+      phoneNumber,
+      email,
+      password: password,
+    });
 
-  await user.save();
-
-  res.status(200).json({ user });
+    await user.save();
+    res.status(200).json({ user });
+  } catch (error) {
+    console.error('Error adding user:', error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 };
 
 exports.unfair = async (req, res, next) => {
