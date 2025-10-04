@@ -78,10 +78,10 @@ exports.authStudent = async (req, res, next) => {
 };
 
 exports.authTest = async (req, res, next) => {
-  var result = await checkToken(req);
+  var result = checkToken(req);
   if (result.success === true && result.token != undefined) {
     try {
-      const decoded = await jwt.verify(result.token, process.env.TOKEN_SECRET);
+      const decoded = jwt.verify(result.token, process.env.TOKEN_SECRET);
       if (decoded.user) {
         req.user = decoded.user;
         req.test = decoded.test;
@@ -105,7 +105,7 @@ exports.checkStartTime = (req, res, next) => {
   var d = new Date();
   var c = d.getTime();
   var testId = req.test ? req.test : req.params.id;
-  const test = Test.findById(testId).then(result => {
+  Test.findById(testId).then(result => {
     console.log(result);
     if (c >= result.startTime && c <= result.endTime) {
       req.testDetails = result;
