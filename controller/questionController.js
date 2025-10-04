@@ -296,7 +296,7 @@ exports.getQuestions = async (req, res, next) => {
       } else {
         res.status(404).json({
           success: false,
-          error: "No User Found"
+          error: "No Question Found"
         })
       }
     })
