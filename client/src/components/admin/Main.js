@@ -46,10 +46,10 @@ export default function Main() {
     async function initials() {
       getCount()
         .then((data) => {
-          if (data.err || data.errors) {
-            alert("error");
+          if (data.success === false) {
+            alert(data.error.message);
           } else {
-            setValues({ ...values, ...data.msg });
+            setValues({ ...values, ...data.data });
           }
         })
         .catch((error) => {

@@ -119,10 +119,10 @@ export default function BasicTextFields() {
             getCategory()
                 .then((data) => {
                     console.log(data)
-                    if (data.err || data.errors) {
-                        toast.error("Error")
+                    if (data.success === false) {
+                        toast.error(data.error.message)
                     } else {
-                        setState({ ...state, category: data });
+                        setState({ ...state, category: data.data });
                     }
                 })
                 .catch((error) => {

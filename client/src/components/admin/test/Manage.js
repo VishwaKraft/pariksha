@@ -24,7 +24,7 @@ export default function BasicTextFields() {
                 getTests((query.page + 1), query.pageSize)
                   .then(result => {
                     resolve({
-                      data: result.results.map(item => {
+                      data: result.data.results.map(item => {
                         var start = new Date(item.startTime)
                         var end = new Date(item.endTime)
                         return { ...item, startTime: start.toLocaleString(), endTime: end.toLocaleString() }
