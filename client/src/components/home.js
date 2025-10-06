@@ -86,7 +86,7 @@ function Home(props) {
         return;
       }
       
-      authenticate(data, () => {
+      authenticate(data.data, () => {
         toast.success('Login Successfully!');
         props.history.push("/student/dashboard");
       });
