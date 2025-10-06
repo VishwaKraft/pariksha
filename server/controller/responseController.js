@@ -225,6 +225,38 @@ exports.getAllResponses = async (req, res, next) => {
           max: { $first: "$max" }
         },
       },
+      {
+        $lookup: {
+          from: "users", // collection name derived from your model
+          let: { uid: { $toObjectId: "$userId" } },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $eq: ["$_id", "$$uid"] },
+              },
+            },
+            {
+              $project: {
+                name: 1,        // ✅ we only need the user's name
+                profileUrl: 1,  // optional — include profile image if you want
+                _id: 0,
+              },
+            },
+          ],
+          as: "userDetails",
+        },
+      },
+      {
+        $addFields: {
+          name: { $arrayElemAt: ["$userDetails.name", 0] },
+          profileUrl: { $arrayElemAt: ["$userDetails.profileUrl", 0] }, // optional
+        },
+      },
+      {
+        $project: {
+          userDetails: 0, // remove the temp field
+        },
+      }
     ]).then(result => {
       if (result && result.length > 0) {
         results.results = result;

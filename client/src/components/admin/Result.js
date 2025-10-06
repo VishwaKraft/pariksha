@@ -10,7 +10,7 @@ function Result() {
                 title="Result"
                 columns={[
                     { title: 'Test', field: 'testId' },
-                    { title: 'User', field: 'userId' },
+                    { title: 'User', field: 'name' },
                     { title: 'Switch', field: 'switchCounter' },
                     { title: 'Max Score', field: 'max' },
                     { title: 'Score', field: 'score' },
