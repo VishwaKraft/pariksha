@@ -12,6 +12,7 @@ const testController = require("../controller/testController");
 const authController = require("../controller/authController");
 const router = express.Router();
 const { body } = require("express-validator");
+const { createErrorResponse, createSuccessResponse, errorCodes } = require("../utils/errorHandler");
 
 // @route   POST /submit-feedback
 // @desc    records feedback
@@ -25,7 +26,7 @@ router.post(
   feedbackController.addFeedback
 );
 router.get("/", (req, res) => {
-  res.status(200).json({ success: true })
+  res.status(200).json(createSuccessResponse(null, "Student route is working"))
 })
 
 router.get("/tests", testController.getTest)

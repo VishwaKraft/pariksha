@@ -8,6 +8,7 @@ const { OAuth2Client } = require('google-auth-library')
 const client = new OAuth2Client(process.env.CLIENT_ID)
 const User = require("../model/User");
 const jwt = require("jsonwebtoken");
+const { createErrorResponse, createSuccessResponse, errorCodes } = require("../utils/errorHandler");
 
 
 // const auth = require('../middleware/auth')
@@ -45,12 +46,14 @@ router.post(
 
 router.get("/time", (req, res) => {
   var d = process.env.TESTENDTIME * 1 - 1800000;  // time stamp of 18 Aug 4:00 PM IST
-  res.status(200).json({
-    success: true,
-    epoch: d,
-    time: new Date(d).toUTCString(),
-    India: moment.unix(d / 1000).tz("Asia/Kolkata").toLocaleString(),
-  });
+  res.status(200).json(createSuccessResponse(
+    {
+      epoch: d,
+      time: new Date(d).toUTCString(),
+      India: moment.unix(d / 1000).tz("Asia/Kolkata").toLocaleString(),
+    },
+    "Time information retrieved successfully"
+  ));
 });
 
 // Handle OPTIONS preflight requests for Google OAuth
@@ -65,10 +68,12 @@ router.post("/api/v1/auth/google", async (req, res) => {
   
   // Check if token exists
   if (!token) {
-    return res.status(400).json({ 
-      success: false, 
-      error: 'Google ID token is required' 
-    });
+    return res.status(400).json(createErrorResponse(
+      errorCodes.VALIDATION_ERROR,
+      'Google ID token is required',
+      null,
+      400
+    ));
   }
   
   try {
@@ -92,10 +97,13 @@ router.post("/api/v1/auth/google", async (req, res) => {
             process.env.TOKEN_SECRET,
             { expiresIn: "1d" },
             async (err, token) => {
-              return res.json({
-                token: token,
-                user: user
-              });
+              return res.json(createSuccessResponse(
+                {
+                  token: token,
+                  user: user
+                },
+                "User registered and logged in successfully"
+              ));
             }
           );
         });
@@ -114,23 +122,33 @@ router.post("/api/v1/auth/google", async (req, res) => {
           process.env.TOKEN_SECRET,
           { expiresIn: "1d" },
           async (err, token) => {
-            return res.json({
-              token: token,
-              user: user
-            });
+            return res.json(createSuccessResponse(
+              {
+                token: token,
+                user: user
+              },
+              "User logged in successfully"
+            ));
           }
         );
       }
     }).catch(err => {
       console.error('Database error:', err);
-      res.status(422).json({ success: false, msg: 'Some error occurred' })
+      res.status(422).json(createErrorResponse(
+        errorCodes.INTERNAL_ERROR,
+        'Some error occurred',
+        err.message,
+        422
+      ));
     })
   } catch (error) {
     console.error('Google OAuth verification error:', error);
-    res.status(400).json({ 
-      success: false, 
-      error: 'Invalid Google ID token' 
-    });
+    res.status(400).json(createErrorResponse(
+      errorCodes.AUTHENTICATION_ERROR,
+      'Invalid Google ID token',
+      error.message,
+      400
+    ));
   }
 })
 

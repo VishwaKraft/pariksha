@@ -3,63 +3,89 @@ const ObjectId = require("mongoose").Types.ObjectId;
 const User = require("../model/User");
 const Question = require("../model/Question");
 const Response = require("../model/Response");
+const { createErrorResponse, createSuccessResponse, errorCodes } = require("../utils/errorHandler");
 
 exports.postCheckAnswers = (req, res, next) => {
   let token = req.headers["authorization"];
   if (!token) {
-    const error = new Error("Token not provided");
-    error.statusCode = 401;
-    return next(error);
+    return res.status(401).json(createErrorResponse(
+      errorCodes.AUTHENTICATION_ERROR,
+      "Token not provided",
+      null,
+      401
+    ));
   }
   token = token.slice(7, token.length);
   jwt.verify(token, process.env.TOKEN_SECRET, async (err, rollNumber) => {
     if (err) {
-      const error = new Error(err);
-      error.statusCode = 401;
-      return next(error);
+      return res.status(401).json(createErrorResponse(
+        errorCodes.INVALID_TOKEN,
+        "Invalid token",
+        err.message,
+        401
+      ));
     }
     let i, j;
     let score = 0;
-    const student = await Student.findOne({ rollNumber: rollNumber }).catch(
-      (err) => {
-        const error = new Error(err);
-        return next(error);
+    
+    try {
+      const student = await Student.findOne({ rollNumber: rollNumber });
+      if (!student) {
+        return res.status(404).json(createErrorResponse(
+          errorCodes.NOT_FOUND,
+          "Student not found",
+          null,
+          404
+        ));
       }
-    );
-    if (!student) {
-      const error = new Error("Student not found");
-      return next(error);
-    }
-    const answers = req.body.answers;
-    for (i = 0; i < answers.length; i++) {
-      const question = await Question.findById(answers[i].question).catch(
-        (err) => {
-          const error = new Error(err);
-          return next(error);
-        }
-      );
-      if (!question) {
-        const error = new Error(`Invalid question ID: ${answers[i].question}`);
-        return next(error);
-      }
-      const optionID = question.options;
-      for (j = 0; j < optionID.length; j++) {
-        if (answers[i].answer == optionID[j]) {
-          const option = await Option.findById(optionID[j]);
-          if (option.correct) {
-            score++;
+      
+      const answers = req.body.answers;
+      for (i = 0; i < answers.length; i++) {
+        try {
+          const question = await Question.findById(answers[i].question);
+          if (!question) {
+            return res.status(404).json(createErrorResponse(
+              errorCodes.NOT_FOUND,
+              "Invalid question ID",
+              `Question ID: ${answers[i].question} not found`,
+              404
+            ));
           }
+          
+          const optionID = question.options;
+          for (j = 0; j < optionID.length; j++) {
+            if (answers[i].answer == optionID[j]) {
+              const option = await Option.findById(optionID[j]);
+              if (option.correct) {
+                score++;
+              }
+            }
+          }
+        } catch (questionError) {
+          return res.status(500).json(createErrorResponse(
+            errorCodes.INTERNAL_ERROR,
+            "Error processing question",
+            questionError.message,
+            500
+          ));
         }
       }
+      
+      student.score = score;
+      await student.save();
+      
+      res.status(200).json(createSuccessResponse(
+        { score },
+        "Answers checked successfully"
+      ));
+    } catch (error) {
+      return res.status(500).json(createErrorResponse(
+        errorCodes.INTERNAL_ERROR,
+        "Error checking answers",
+        error.message,
+        500
+      ));
     }
-    student.score = score;
-    await student.save().catch((err) => {
-      const error = new Error(err);
-      return next(error);
-    });
-    res.status(200).json({
-      message: "Answers checked",
-    });
   });
 };
 
@@ -67,29 +93,47 @@ exports.postCheckAnswers = (req, res, next) => {
 exports.getTestResult = (req, res) => {
   const testId = req.params.id;
   let resultTest = [];
-  Response.find({ testId }).then(async responses => {
-    const maxMarks = responses[0].questions.length;
-    for (let i = 0; i < responses.length; i++) {
-      console.log(`user id is ${responses[i].userId}`);
-      let count = 0; let userObj;
-      for (let j = 0; j < responses[i].responses.length; j++) {
-        let questionId = responses[i].responses[j].question;
-        let userAnswer = responses[i].responses[j].response;
-        await Question.findById(questionId).then(r => {
-          if (r.correct === userAnswer) {
-            count++;
-          }
-        })
-        await User.findById(responses[i].userId).then(user => {
-          userObj = user;
-        })
+  Response.find({ testId })
+    .then(async responses => {
+      if (!responses || responses.length === 0) {
+        return res.status(404).json(createErrorResponse(
+          errorCodes.NOT_FOUND,
+          "No test responses found",
+          null,
+          404
+        ));
       }
-      // now we know the userId, count, maxMarks
-      let singleResult = { "userId": userObj, "marksobt": count, "maxMarks": maxMarks };
-      resultTest.push(singleResult);
-    }
-    res.json(resultTest);
-  })
+      
+      const maxMarks = responses[0].questions.length;
+      for (let i = 0; i < responses.length; i++) {
+        console.log(`user id is ${responses[i].userId}`);
+        let count = 0; let userObj;
+        for (let j = 0; j < responses[i].responses.length; j++) {
+          let questionId = responses[i].responses[j].question;
+          let userAnswer = responses[i].responses[j].response;
+          await Question.findById(questionId).then(r => {
+            if (r.correct === userAnswer) {
+              count++;
+            }
+          })
+          await User.findById(responses[i].userId).then(user => {
+            userObj = user;
+          })
+        }
+        // now we know the userId, count, maxMarks
+        let singleResult = { "userId": userObj, "marksobt": count, "maxMarks": maxMarks };
+        resultTest.push(singleResult);
+      }
+      res.json(createSuccessResponse(resultTest, "Test results retrieved successfully"));
+    })
+    .catch(error => {
+      res.status(500).json(createErrorResponse(
+        errorCodes.INTERNAL_ERROR,
+        "Failed to retrieve test results",
+        error.message,
+        500
+      ));
+    });
 }
 
 
@@ -124,9 +168,13 @@ exports.getQuestionsForTest = async (req, res, next) => {
         },
       },
     ]);
-    return res
-      .status(200)
-      .json({ res_questions: result[0].questionsDetails, time: req.time });
+    return res.status(200).json(createSuccessResponse(
+      { 
+        res_questions: result[0].questionsDetails, 
+        time: req.time 
+      },
+      "Questions retrieved successfully"
+    ));
   }
 
   try {
@@ -198,14 +246,25 @@ try {
   })).save();
 } catch (error) {
   console.error('Error saving response:', error);
-  return res.status(500).json({ error: "Failed to save test session" });
+  return res.status(500).json(createErrorResponse(
+    errorCodes.INTERNAL_ERROR,
+    "Failed to save test session",
+    error.message,
+    500
+  ));
 }
-    return res
-      .status(200)
-      .json({ res_questions: ret_questions, time: req.time });
+    return res.status(200).json(createSuccessResponse(
+      { res_questions: ret_questions, time: req.time },
+      "Questions retrieved successfully"
+    ));
   } catch (err) {
     console.log(err)
-    return res.status(500).json({ error: "server error" });
+    return res.status(500).json(createErrorResponse(
+      errorCodes.INTERNAL_ERROR,
+      "Server error",
+      err.message,
+      500
+    ));
   }
 };
 
@@ -232,10 +291,15 @@ exports.addQuestions = async (req, res) => {
 
     await new_question.save();
 
-    return res.status(200).json({ success: true, msg: "Question Saved" });
+    return res.status(200).json(createSuccessResponse(null, "Question saved successfully"));
   } catch (err) {
     if (err) {
-      res.status(500).json({ success: false, error: "Server Error" });
+      res.status(500).json(createErrorResponse(
+        errorCodes.INTERNAL_ERROR,
+        "Failed to save question",
+        err.message,
+        500
+      ));
     }
   }
 };
@@ -246,10 +310,12 @@ exports.addAllQuestions = async (req, res) => {
   
   // Validate that questions is an array
   if (!Array.isArray(questions)) {
-    return res.status(400).json({ 
-      error: "Invalid data format", 
-      details: "Expected an array of questions" 
-    });
+    return res.status(400).json(createErrorResponse(
+      errorCodes.VALIDATION_ERROR, 
+      "Invalid data format", 
+      "Expected an array of questions",
+      400
+    ));
   }
   
   // Validate data structure for each question
@@ -269,26 +335,31 @@ exports.addAllQuestions = async (req, res) => {
   });
   
   if (invalidQuestions.length > 0) {
-    return res.status(400).json({ 
-      error: "Invalid data format", 
-      details: "Missing required fields in some questions",
-      invalidQuestions: invalidQuestions
-    });
+    return res.status(400).json(createErrorResponse(
+      errorCodes.VALIDATION_ERROR,
+      "Invalid data format",
+      {
+        message: "Missing required fields in some questions",
+        invalidQuestions: invalidQuestions
+      },
+      400
+    ));
   }
   
   try {
     await Question.insertMany(questions);
-    return res.status(200).json({ 
-      success: true,
-      msg: `${questions.length} questions saved successfully` 
-    });
+    return res.status(200).json(createSuccessResponse(
+      { count: questions.length },
+      `${questions.length} questions saved successfully`
+    ));
   } catch (err) {
     console.log(err);
-    return res.status(500).json({ 
-      success: false,
-      error: "Server Error", 
-      details: err.message 
-    });
+    return res.status(500).json(createErrorResponse(
+      errorCodes.INTERNAL_ERROR,
+      "Server Error", 
+      err.message,
+      500
+    ));
   }
 };
 
@@ -302,19 +373,23 @@ exports.getQuestions = async (req, res, next) => {
       if (result) {
         results.results = result;
         results.page = req.query.page;
-        res.status(200).json(results);
+        res.status(200).json(createSuccessResponse(results, "Questions retrieved successfully"));
       } else {
-        res.status(404).json({
-          success: false,
-          error: "No Question Found"
-        })
+        res.status(404).json(createErrorResponse(
+          errorCodes.NOT_FOUND,
+          "No Questions Found",
+          null,
+          404
+        ));
       }
     })
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: error.message
-    })
+    res.status(500).json(createErrorResponse(
+      errorCodes.INTERNAL_ERROR,
+      "Failed to retrieve questions",
+      error.message,
+      500
+    ));
   }
 }
 
@@ -322,20 +397,24 @@ exports.getCategory = async (req, res, next) => {
   try {
     await Question.distinct('category').then(result => {
       if (result) {
-        res.status(200).json(result);
+        res.status(200).json(createSuccessResponse(result, "Categories retrieved successfully"));
       } else {
-        res.status(404).json({
-          success: false,
-          error: "No Category Found"
-        })
+        res.status(404).json(createErrorResponse(
+          errorCodes.NOT_FOUND,
+          "No Categories Found",
+          null,
+          404
+        ));
       }
     })
   } catch (error) {
     console.log(error)
-    res.status(500).json({
-      success: false,
-      error: error.message
-    })
+    res.status(500).json(createErrorResponse(
+      errorCodes.INTERNAL_ERROR,
+      "Failed to retrieve categories",
+      error.message,
+      500
+    ));
   }
 }
 
@@ -343,9 +422,14 @@ exports.deleteQuestion = async (req, res) => {
   const { id } = req.params;
   try {
     await Question.deleteOne({ _id: id })
-    res.status(200).json({ success: true });
+    res.status(200).json(createSuccessResponse(null, "Question deleted successfully"));
   } catch (error) {
-    res.status(500).json({ success: false, msg: "Not able to find the Question to be delete" })
+    res.status(500).json(createErrorResponse(
+      errorCodes.NOT_FOUND,
+      "Not able to find the question to be deleted",
+      error.message,
+      500
+    ));
   }
 };
 
@@ -353,8 +437,13 @@ exports.updateQuestion = async (req, res) => {
   const { id } = req.params;
   try {
     await Question.updateOne({ _id: id }, req.body)
-    res.status(200).json({ success: true });
+    res.status(200).json(createSuccessResponse(null, "Question updated successfully"));
   } catch (error) {
-    res.status(500).json({ success: false, msg: "Not able to find the Question to be update" })
+    res.status(500).json(createErrorResponse(
+      errorCodes.NOT_FOUND, 
+      "Not able to find the question to be updated",
+      error.message,
+      500
+    ));
   }
 };

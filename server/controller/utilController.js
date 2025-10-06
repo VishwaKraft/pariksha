@@ -4,15 +4,18 @@ const User = require("../model/User");
 const Feedback = require("../model/Feedback");
 const Test = require("../model/Test");
 const Response = require("../model/Response");
+const { createErrorResponse, createSuccessResponse, errorCodes } = require("../utils/errorHandler");
 const csv = require("csv")
 
 exports.validateRequest = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(422).json({
-      success: false,
-      errors: errors.array(),
-    });
+    return res.status(422).json(createErrorResponse(
+      errorCodes.VALIDATION_ERROR,
+      "Validation failed",
+      errors.array(),
+      422
+    ));
   } else {
     next();
   }
@@ -28,13 +31,18 @@ exports.countEntities = async (req, res, next) => {
       Response.countDocuments()
     ]);
     
-    res.status(200).json({ 
-      success: true, 
-      msg: { users, questions, feedbacks, tests, responses } 
-    });
+    res.status(200).json(createSuccessResponse(
+      { users, questions, feedbacks, tests, responses },
+      "Entity counts retrieved successfully"
+    ));
   } catch (error) {
     console.error('Error counting entities:', error);
-    res.status(500).json({ success: false, error: "Internal server error" });
+    res.status(500).json(createErrorResponse(
+      errorCodes.INTERNAL_ERROR,
+      "Internal server error",
+      error.message,
+      500
+    ));
   }
 }
 
