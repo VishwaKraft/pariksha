@@ -1,4 +1,5 @@
 const Response = require("../model/Response");
+const { createErrorResponse, createSuccessResponse, errorCodes } = require("../utils/errorHandler");
 const ObjectId = require("mongoose").Types.ObjectId;
 
 exports.unfair = async (req, res, next) => {
@@ -7,9 +8,14 @@ exports.unfair = async (req, res, next) => {
     var x = response.switchCounter;
     response.switchCounter = x + 1;
     await response.save();
-    res.status(200).json({ success: true });
+    res.status(200).json(createSuccessResponse(null, "Switch counter updated successfully"));
   } catch (err) {
-    res.status(500).json({ success: false });
+    res.status(500).json(createErrorResponse(
+      errorCodes.INTERNAL_ERROR,
+      "Failed to update switch counter",
+      err.message,
+      500
+    ));
   }
 };
 
@@ -18,6 +24,14 @@ exports.unfair = async (req, res, next) => {
 exports.saveResponses = async (req, res, next) => {
   try {
     const response = await Response.findOne({ userId: ObjectId(req.user), testId: ObjectId(req.test) });
+    if (!response) {
+      return res.status(404).json(createErrorResponse(
+        errorCodes.NOT_FOUND,
+        "Response not found",
+        "No active test session found for this user",
+        404
+      ));
+    }
 
     selected = req.body.responses;
 
@@ -70,10 +84,15 @@ exports.saveResponses = async (req, res, next) => {
         responses: finalResp
       }
     })
-    return res.status(200).json({ msg: "Success" });
+    return res.status(200).json(createSuccessResponse(null, "Responses saved successfully"));
   } catch (err) {
     console.log(err)
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json(createErrorResponse(
+      errorCodes.INTERNAL_ERROR,
+      "Failed to save responses",
+      err.message,
+      500
+    ));
   }
 };
 
@@ -81,6 +100,14 @@ exports.saveResponses = async (req, res, next) => {
 exports.endTest = async (req, res) => {
   try {
     const response = await Response.findOne({ userId: ObjectId(req.user), testId: ObjectId(req.test) });
+    if (!response) {
+      return res.status(404).json(createErrorResponse(
+        errorCodes.NOT_FOUND,
+        "Response not found",
+        "No active test session found for this user",
+        404
+      ));
+    }
 
     const selected = req.body.responses;
 
@@ -124,9 +151,14 @@ exports.endTest = async (req, res) => {
         responses: finalResp
       }
     })
-    return res.status(200).json({ success: true });
+    return res.status(200).json(createSuccessResponse(null, "Test ended successfully"));
   } catch (err) {
-    return res.status(500).json({ success: false, error: "Server Error" });
+    return res.status(500).json(createErrorResponse(
+      errorCodes.INTERNAL_ERROR,
+      "Failed to end test",
+      err.message,
+      500
+    ));
   }
 };
 
@@ -193,31 +225,82 @@ exports.getAllResponses = async (req, res, next) => {
           max: { $first: "$max" }
         },
       },
+      {
+        $lookup: {
+          from: "users", // collection name derived from your model
+          let: { uid: { $toObjectId: "$userId" } },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $eq: ["$_id", "$$uid"] },
+              },
+            },
+            {
+              $project: {
+                name: 1,        // ✅ we only need the user's name
+                profileUrl: 1,  // optional — include profile image if you want
+                _id: 0,
+              },
+            },
+          ],
+          as: "userDetails",
+        },
+      },
+      {
+        $addFields: {
+          name: { $arrayElemAt: ["$userDetails.name", 0] },
+          profileUrl: { $arrayElemAt: ["$userDetails.profileUrl", 0] }, // optional
+        },
+      },
+      {
+        $project: {
+          userDetails: 0, // remove the temp field
+        },
+      }
     ]).then(result => {
-      if (result) {
+      if (result && result.length > 0) {
         results.results = result;
         results.page = req.query.page;
-        res.status(200).json(results);
+        res.status(200).json(createSuccessResponse(results, "Responses retrieved successfully"));
       } else {
-        res.status(404).json({
-          success: false,
-          error: "No Responses Found"
-        })
+        res.status(404).json(createErrorResponse(
+          errorCodes.NOT_FOUND,
+          "No Responses Found",
+          null,
+          404
+        ));
       }
     })
   }
-  catch {
-    res.status(500).json({
-      success: false,
-      error: error.message
-    })
+  catch (error) {
+    res.status(500).json(createErrorResponse(
+      errorCodes.INTERNAL_ERROR,
+      "Failed to retrieve responses",
+      error.message,
+      500
+    ));
   }
 }
 
 exports.deleteResponseById = (req, res, next) => {
-  Response.findByIdAndDelete(req.params.id).then(result => {
-    res.json({ "status": "true" });
-  }).catch(err => {
-    res.json({ "status": "false" });
-  })
+  Response.findByIdAndDelete(req.params.id)
+    .then(result => {
+      if (!result) {
+        return res.status(404).json(createErrorResponse(
+          errorCodes.NOT_FOUND,
+          "Response not found",
+          `Response with ID ${req.params.id} does not exist`,
+          404
+        ));
+      }
+      res.json(createSuccessResponse(null, "Response deleted successfully"));
+    })
+    .catch(err => {
+      res.status(500).json(createErrorResponse(
+        errorCodes.INTERNAL_ERROR,
+        "Failed to delete response",
+        err.message,
+        500
+      ));
+    });
 }

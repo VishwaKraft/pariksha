@@ -7,13 +7,13 @@ const feedbackController = require("../controller/feedbackController");
 const responseController = require("../controller/responseController");
 const router = express.Router();
 const { body } = require("express-validator");
-const multer = require('multer')
-const storage = multer.memoryStorage()
-const upload = multer({ storage: storage })
+const multer = require('multer');
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 const UtilController = require("../controller/utilController");
 const QuestionController = require("../controller/questionController");
 const fileController = require("../controller/fileController");
-
+const { createErrorResponse, createSuccessResponse, errorCodes } = require("../utils/errorHandler");
 
 router.post("/check-answers", questionController.postCheckAnswers);
 
@@ -26,7 +26,12 @@ router.post("/add-question", fileController.uploadImage.single('image'), questio
 router.post("/upload-questions", upload.single("file"), async (req, res, next) => {
     const file = req.file;
     if (!file) {
-      return res.status(422).json({ error: "No file uploaded" });
+      return res.status(422).json(createErrorResponse(
+        errorCodes.VALIDATION_ERROR, 
+        "No file uploaded",
+        null,
+        422
+      ));
     }
     
     try {
@@ -35,7 +40,12 @@ router.post("/upload-questions", upload.single("file"), async (req, res, next) =
       next();
     } catch (err) {
       console.log(err);
-      return res.status(400).json({ error: "Invalid CSV file format", details: err.message });
+      return res.status(400).json(createErrorResponse(
+        errorCodes.VALIDATION_ERROR,
+        "Invalid CSV file format", 
+        err.message,
+        400
+      ));
     }
   }, QuestionController.addAllQuestions)
 //get All Users

@@ -11,6 +11,7 @@ const indexRoute = require("./routes/root");
 const adminRoute = require("./routes/admin");
 const { authStudent, authTest, authAdmin } = require("./controller/authController");
 const cors = require("cors");
+const { createErrorResponse, errorCodes } = require("./utils/errorHandler");
 
 dotenv.config();
 const PORT = process.env.PORT || 3000;
@@ -66,14 +67,16 @@ app.use(function (req, res, next) {
 });
 
 // error handler
-app.use(function (err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get("env") === "development" ? err : {};
-
-  // render the error page
-  res.status(err.status || 500);
-  res.render("error");
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(err.statusCode || 500).json(
+    createErrorResponse(
+      errorCodes.INTERNAL_ERROR,
+      err.message || "Something went wrong!",
+      err.stack,
+      err.statusCode || 500
+    )
+  );
 });
 
 module.exports = app;
