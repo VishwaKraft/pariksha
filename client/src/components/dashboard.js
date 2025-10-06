@@ -21,8 +21,8 @@ export default function Dashboard(props) {
 
   useEffect(() => {
     getTests().then(async result => {
-      if (result.success !== false) {
-        setValues(result.results)
+      if (result.success === true) {
+        setValues(result.data.results)
       } else {
         localStorage.removeItem("token")
         window.location.reload()

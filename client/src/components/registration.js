@@ -28,10 +28,8 @@ const Signup = () => {
         setValues({ ...values, error: false, loading: true });
         signup({ name, email, password, rollNumber, phoneNumber, branch })
             .then(data => {
-                if (data.error) {
-                    setValues({ ...values, error: data.error, success: false, loading: false });
-                } else if (data.err) {
-                    setValues({ ...values, error: data.err, success: false, loading: false });
+                if (data.success === false) {
+                    setValues({ ...values, error: data.error.message, success: false, loading: false });
                 } else {
                     setValues({
                         ...values,

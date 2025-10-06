@@ -67,16 +67,16 @@ const Instruction = () => {
     } else {
       setValues({ ...values, error: false, loading: true });
       getTestToken(id).then(result => {
-        if (result.token) {
-          localStorage.setItem("test-token", result.token)
+        if (result.success === true && result.data.token) {
+          localStorage.setItem("test-token", result.data.token)
           getQuestions(lang)
             .then((res) => {
-              if (res.res_questions) {
+              if (res.success === true && res.data.res_questions) {
                 localStorage.setItem(
                   "questions",
-                  JSON.stringify(res.res_questions)
+                  JSON.stringify(res.data.res_questions)
                 );
-                localStorage.setItem("time", JSON.stringify(res.time));
+                localStorage.setItem("time", JSON.stringify(res.data.time));
                 localStorage.setItem("save", JSON.stringify([]));
                 localStorage.setItem("mark", JSON.stringify([]));
                 setValues((values) => ({
@@ -85,13 +85,13 @@ const Instruction = () => {
                   didRedirect: true,
                 }));
               } else {
-                setValues({ ...values, error: res.error });
+                setValues({ ...values, error: res.error.message });
                 document.getElementById("errorText").classList.add("d-block");
               }
             })
             .catch((err) => console.log(err));
         } else {
-          setValues({ ...values, error: result.error });
+          setValues({ ...values, error: result.error.message });
           document.getElementById("errorText").classList.add("d-block");
         }
         console.log(result)

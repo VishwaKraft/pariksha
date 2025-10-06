@@ -58,35 +58,9 @@ export const isAuthenticated = () => {
     return false;
   }
   if (localStorage.getItem("token")) {
-    return localStorage.getItem("token")
-    // try {
-    //   var data = await fetch(
-    //     process.env.REACT_APP_API_URL + `/student/`,
-    //     {
-    //       method: "GET",
-    //       headers: {
-    //         Accept: "application/json",
-    //         "Content-Type": "application/json",
-    //         authorization: "Bearer " + localStorage.getItem("token"),
-    //       },
-    //     }
-    //   )
-    //     .then((response) => {
-    //       console.log(response)
-    //       return response.json();
-    //     })
-    //   if (data.success === true) {
-    //     return localStorage.getItem("token")
-    //   } else {
-    //     localStorage.removeItem("token")
-    //     return false
-    //   }
-    // } catch (error) {
-    //   localStorage.removeItem("token")
-    //   return false
-    // }
+    return localStorage.getItem("token");
   } else {
-    localStorage.removeItem("token")
+    localStorage.removeItem("token");
     return false;
   }
 };

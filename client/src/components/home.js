@@ -52,11 +52,11 @@ function Home(props) {
       setValues({ ...values, error: false, loading: true });
       signin({ email, password })
         .then((data) => {
-          if (data.error) {
-            setValues({ ...values, error: data.error, loading: false });
+          if (data.success === false) {
+            setValues({ ...values, error: data.error.message, loading: false });
             handleShow();
           } else {
-            authenticate(data, () => {
+            authenticate(data.data, () => {
               toast.success('Login Successfully!');
               props.history.push("/student/dashboard");
             });

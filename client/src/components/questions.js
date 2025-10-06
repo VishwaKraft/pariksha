@@ -103,8 +103,8 @@ const Questions = (props) => {
       });
       endTest({ responses: filteredResponse })
         .then((data) => {
-          if (!data.success) {
-            setValues({ ...values, error: data.error });
+          if (data.success === false) {
+            setValues({ ...values, error: data.error.message });
             handleShow();
           } else {
             setValues({ ...values, end: true });
@@ -184,11 +184,8 @@ const Questions = (props) => {
       let res = { question: id, response: parseInt(option) };
       submitAnswer(res)
         .then((data) => {
-          if (data.err) {
-            setValues({ ...values, error: data.err, loading: false });
-            handleShow();
-          } else if (data.error) {
-            setValues({ ...values, error: data.error, loading: false });
+          if (data.success === false) {
+            setValues({ ...values, error: data.error.message, loading: false });
             handleShow();
           } else if (data.message) {
             setValues({ ...values, error: data.message });
@@ -333,8 +330,8 @@ const Questions = (props) => {
     });
     endTest({ responses: filteredResponse })
       .then((data) => {
-        if (!data.success) {
-          setValues({ ...values, error: data.error });
+        if (data.success === false) {
+          setValues({ ...values, error: data.error.message });
           handleShow();
         } else {
           setValues({ ...values, end: true });

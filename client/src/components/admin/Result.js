@@ -21,9 +21,9 @@ function Result() {
                         getResponse((query.page + 1), query.pageSize)
                             .then(result => {
                                 resolve({
-                                    data: result.results,
-                                    page: result.page - 1,
-                                    totalCount: result.total,
+                                    data: result.data.results,
+                                    page: result.data.page - 1,
+                                    totalCount: result.data.total,
                                 })
                             })
                     })}

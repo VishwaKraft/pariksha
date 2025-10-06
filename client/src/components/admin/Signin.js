@@ -66,11 +66,11 @@ function SignInSide(props) {
     setValues({ ...values, error: false, loading: true });
     signin({ email, password })
         .then((data) => {
-          if (data.err || data.errors) {
-            setValues({ ...values, error: data.err ? data.err : data.errors, loading: false });
-            alert(error);
+          if (data.success === false) {
+            setValues({ ...values, error: data.error.message, loading: false });
+            alert(data.error.message);
           } else {
-            authenticate(data,()=>{
+            authenticate(data.data,()=>{
               props.history.push('../admin/main');
             });
           }
