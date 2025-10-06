@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const Response = require("../model/Response");
 const Test = require("../model/Test");
 const User = require("../model/User");
+const { createErrorResponse, createSuccessResponse, errorCodes } = require("../utils/errorHandler");
 
 const checkToken = (req) => {
   const header = req.headers["authorization"];
@@ -18,14 +19,18 @@ exports.login = (req, res) => {
     if (req.body.password === "advancePass@123") {
       jwt.sign({ user: "admin" }, process.env.TOKEN_SECRET, { expiresIn: "1d" },
         async (err, token) => {
-          res.json({
+          const responseData = {
             token: token,
             user: { "email": "admin@deloitte.com", "name": "Admin" }
-          });
+          };
+          res.json(createSuccessResponse(responseData, "Login successful"));
         }
       );
     } else {
-      res.status(401).json({ error: "Password Incorrect" });
+      res.status(401).json(createErrorResponse(
+        errorCodes.INVALID_CREDENTIALS, 
+        "Password Incorrect"
+      ));
     }
   } else {
     const { email, password } = req.body;
@@ -38,17 +43,24 @@ exports.login = (req, res) => {
             { expiresIn: "1d" },
             async (err, token) => {
               user.password = 'encrypted';
-              res.json({
+              const responseData = {
                 token: token,
                 user: user
-              });
+              };
+              res.json(createSuccessResponse(responseData, "Login successful"));
             }
           );
         } else {
-          res.status(401).json({ error: "Password Incorrect" });
+          res.status(401).json(createErrorResponse(
+            errorCodes.INVALID_CREDENTIALS, 
+            "Password Incorrect"
+          ));
         }
       } else {
-        res.status(400).json({ error: "No User Exist" });
+        res.status(400).json(createErrorResponse(
+          errorCodes.NOT_FOUND, 
+          "No User Exists"
+        ));
       }
     });
   }
@@ -65,23 +77,38 @@ exports.authStudent = async (req, res, next) => {
       } else {
         return res
           .status(401)
-          .json({ success: false, error: "Token Is Not Valid" });
+          .json(createErrorResponse(
+            errorCodes.INVALID_TOKEN,
+            "Token Is Not Valid",
+            null,
+            401
+          ));
       }
     } catch (ex) {
       return res
         .status(403)
-        .json({ success: false, error: "Token Is Not Valid" });
+        .json(createErrorResponse(
+          errorCodes.INVALID_TOKEN,
+          "Token Is Not Valid",
+          null,
+          403
+        ));
     }
   } else {
-    return res.status(403).json({ success: false, error: "Token Is Not Valid" });
+    return res.status(403).json(createErrorResponse(
+      errorCodes.AUTHORIZATION_ERROR,
+      "Token Is Not Valid",
+      null,
+      403
+    ));
   }
 };
 
 exports.authTest = async (req, res, next) => {
-  var result = await checkToken(req);
+  var result = checkToken(req);
   if (result.success === true && result.token != undefined) {
     try {
-      const decoded = await jwt.verify(result.token, process.env.TOKEN_SECRET);
+      const decoded = jwt.verify(result.token, process.env.TOKEN_SECRET);
       if (decoded.user) {
         req.user = decoded.user;
         req.test = decoded.test;
@@ -89,15 +116,30 @@ exports.authTest = async (req, res, next) => {
       } else {
         return res
           .status(401)
-          .json({ success: false, error: "Token Is Not Valid" });
+          .json(createErrorResponse(
+            errorCodes.INVALID_TOKEN,
+            "Token Is Not Valid",
+            null,
+            401
+          ));
       }
     } catch (ex) {
       return res
         .status(403)
-        .json({ success: false, error: "Token Is Not Valid" });
+        .json(createErrorResponse(
+          errorCodes.INVALID_TOKEN,
+          "Token Is Not Valid",
+          null,
+          403
+        ));
     }
   } else {
-    return res.status(403).json({ success: false, error: "Token Is Not Valid" });
+    return res.status(403).json(createErrorResponse(
+      errorCodes.AUTHORIZATION_ERROR,
+      "Token Is Not Valid",
+      null,
+      403
+    ));
   }
 };
 
@@ -105,20 +147,22 @@ exports.checkStartTime = (req, res, next) => {
   var d = new Date();
   var c = d.getTime();
   var testId = req.test ? req.test : req.params.id;
-  const test = Test.findById(testId).then(result => {
+  Test.findById(testId).then(result => {
     console.log(result);
     if (c >= result.startTime && c <= result.endTime) {
       req.testDetails = result;
       next();
     } else {
-      res.status(400).json({
-        error: "Not a right time to start the test",
-      });
+      res.status(400).json(createErrorResponse(
+        errorCodes.INVALID_TEST_TIME,
+        "Not a right time to start the test"
+      ));
     }
   }).catch(err => {
-    res.status(400).json({
-      error: "Invalid Test.",
-    });
+    res.status(400).json(createErrorResponse(
+      errorCodes.INVALID_TEST,
+      "Invalid Test."
+    ));
   })
 
 };
@@ -130,14 +174,16 @@ exports.checkEndTime = (req, res, next) => {
     if (c <= result.endTime) {
       next();
     } else {
-      res.status(400).json({
-        error: "Test has Ended",
-      });
+      res.status(400).json(createErrorResponse(
+        errorCodes.TEST_ENDED,
+        "Test has Ended"
+      ));
     }
   }).catch(err => {
-    res.status(400).json({
-      error: "Some Invalid operations",
-    });
+    res.status(400).json(createErrorResponse(
+      errorCodes.INTERNAL_ERROR,
+      "Some Invalid operations"
+    ));
   })
 };
 
@@ -167,23 +213,33 @@ exports.selectTest = async (req, res) => {
     try {
       var response = await Response.findOne({ userId, testId })
       if (response) {
-        res.status(500).json({ success: false, error: "Already Attempted Test" })
+        res.status(500).json(createErrorResponse(
+          errorCodes.TEST_ALREADY_ATTEMPTED,
+          "Already Attempted Test",
+          null,
+          500
+        ));
       } else {
         jwt.sign(
           { user: userId, test: id },
           process.env.TOKEN_SECRET,
           { expiresIn: ttime },
           async (err, token) => {
-            res.json({
-              success: true,
-              token: token
-            });
+            res.json(createSuccessResponse(
+              { token },
+              "Test selected successfully"
+            ));
           }
         );
       }
     } catch (error) {
       console.log(error)
-      res.status(500).json({ success: false });
+      res.status(500).json(createErrorResponse(
+        errorCodes.INTERNAL_ERROR,
+        "An error occurred",
+        error.message,
+        500
+      ));
     }
   })
 };
@@ -199,14 +255,29 @@ exports.authAdmin = async (req, res, next) => {
       } else {
         return res
           .status(401)
-          .json({ success: false, error: "Token Is Not Valid" });
+          .json(createErrorResponse(
+            errorCodes.INVALID_TOKEN,
+            "Token Is Not Valid",
+            null,
+            401
+          ));
       }
     } catch (ex) {
       return res
         .status(403)
-        .json({ success: false, error: "Token Is Not Valid" });
+        .json(createErrorResponse(
+          errorCodes.INVALID_TOKEN,
+          "Token Is Not Valid",
+          null,
+          403
+        ));
     }
   } else {
-    return res.status(403).json({ success: false, error: "Token Is Not Valid" });
+    return res.status(403).json(createErrorResponse(
+      errorCodes.AUTHORIZATION_ERROR,
+      "Token Is Not Valid",
+      null,
+      403
+    ));
   }
 };

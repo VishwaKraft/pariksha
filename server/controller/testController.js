@@ -1,4 +1,7 @@
 const Test = require("../model/Test");
+const Question = require("../model/Question");
+const Response = require("../model/Response");
+const { createErrorResponse, createSuccessResponse, errorCodes } = require("../utils/errorHandler");
 const { getISTfromUTC, getDurationFromTime } = require("./utilController")
 
 exports.addTest = async (req, res) => {
@@ -9,7 +12,12 @@ exports.addTest = async (req, res) => {
   }
   const { startTime, endTime, title, mandatoryCategory, optionalCategory, description } = req.body;
   if (endTime - startTime >= 86400000 || endTime <= startTime) {
-    return res.status(422).json({ success: false, msg: "Time interval is invalid" })
+    return res.status(422).json(createErrorResponse(
+      errorCodes.VALIDATION_ERROR,
+      "Time interval is invalid",
+      null,
+      422
+    ));
   }
   try {
     var test = { startTime, endTime, title, mandatoryCategory, optionalCategory, description, testUrl }
@@ -20,10 +28,15 @@ exports.addTest = async (req, res) => {
 
     // console.log(`start d is ${d} and the end time is ${c}`);
     await (new Test({ ...test, startTime: (test.startTime), endTime: (test.endTime) })).save()
-    res.status(200).json({ success: true });
+    res.status(200).json(createSuccessResponse(null, "Test added successfully"));
   } catch (error) {
     console.log(error)
-    res.status(422).json({ success: false, msg: "Title Already present", err: error });
+    res.status(422).json(createErrorResponse(
+      errorCodes.DUPLICATE_ENTRY,
+      "Title already present",
+      error.message,
+      422
+    ));
   }
 };
 
@@ -41,12 +54,14 @@ exports.getTest = async (req, res, next) => {
           if (result) {
             results.results = result;
             results.page = req.query.page;
-            res.status(200).json({ success: true, ...results });
+            res.status(200).json(createSuccessResponse(results, "Tests retrieved successfully"));
           } else {
-            res.status(404).json({
-              success: false,
-              error: "No Test Found"
-            })
+            res.status(404).json(createErrorResponse(
+              errorCodes.NOT_FOUND,
+              "No Tests Found",
+              null,
+              404
+            ));
           }
         })
     } else if (id) {
@@ -63,12 +78,14 @@ exports.getTest = async (req, res, next) => {
         })
         .then(result => {
           if (result) {
-            res.status(200).json({ success: true, ...results });
+            res.status(200).json(createSuccessResponse(result, "Test retrieved successfully"));
           } else {
-            res.status(404).json({
-              success: false,
-              error: "No Test Found"
-            })
+            res.status(404).json(createErrorResponse(
+              errorCodes.NOT_FOUND,
+              "No Test Found",
+              null,
+              404
+            ));
           }
         })
     } else {
@@ -83,15 +100,20 @@ exports.getTest = async (req, res, next) => {
             duration: getDurationFromTime(item.startTime, item.endTime)
           }
         }))
-      res.status(200).json({ success: true, results });
+      res.status(200).json(createSuccessResponse(
+        { results },
+        "Tests retrieved successfully"
+      ));
     }
 
   } catch (error) {
     console.log(error)
-    res.status(500).json({
-      success: false,
-      error: error.message
-    })
+    res.status(500).json(createErrorResponse(
+      errorCodes.INTERNAL_ERROR,
+      "Failed to retrieve tests",
+      error.message,
+      500
+    ));
   }
 }
 
@@ -99,9 +121,14 @@ exports.updateTest = async (req, res) => {
   const { id } = req.params;
   try {
     await Test.updateOne({ _id: id }, req.body)
-    res.status(200).json({ success: true });
+    res.status(200).json(createSuccessResponse(null, "Test updated successfully"));
   } catch (error) {
-    res.status(500).json({ success: false })
+    res.status(500).json(createErrorResponse(
+      errorCodes.INTERNAL_ERROR,
+      "Failed to update test",
+      error.message,
+      500
+    ));
   }
 };
 
@@ -109,8 +136,13 @@ exports.deleteTest = async (req, res) => {
   const { id } = req.params;
   try {
     await Test.deleteOne({ _id: id })
-    res.status(200).json({ success: true });
+    res.status(200).json(createSuccessResponse(null, "Test deleted successfully"));
   } catch (error) {
-    res.status(500).json({ success: false })
+    res.status(500).json(createErrorResponse(
+      errorCodes.INTERNAL_ERROR,
+      "Failed to delete test",
+      error.message,
+      500
+    ));
   }
 };
