@@ -1,10 +1,12 @@
 import CircularProgress from "@material-ui/core/CircularProgress";
 import NavBar from "./nav";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Redirect, withRouter, useParams } from "react-router-dom";
 import { isAuthenticated } from "../helper/Auth";
 import { getQuestions, getTestToken } from "../helper/Test";
 import Webcam from "react-webcam";
+import webSocketService from "../helper/WebSocketService";
+import CameraTest from "./CameraTest";
 import { Box, Button, Container, FormControl, Grid, InputLabel, makeStyles, MenuItem, Paper, Select } from "@material-ui/core";
 
 const useStyles = makeStyles((theme) => ({
@@ -40,6 +42,7 @@ const Instruction = () => {
     isCameraOne: false,
     error: "",
     lang: JSON.parse(localStorage.getItem("test")).optionalCategory.length > 0 ? JSON.parse(localStorage.getItem("test")).optionalCategory[0] : null,
+    showCameraTest: false,
   });
 
   const {
@@ -54,6 +57,7 @@ const Instruction = () => {
     startTime,
     error,
     lang,
+    showCameraTest,
   } = values;
 
   const token = isAuthenticated();
@@ -62,7 +66,7 @@ const Instruction = () => {
 
   const handleRedirect = async (event) => {
     if (isCameraOne === false) {
-      setValues({ ...values, error: "Please Turn On Camera!" });
+      setValues({ ...values, error: "Please Turn On Camera!", showCameraTest: true });
       document.getElementById("errorText").classList.add("d-block");
     } else {
       setValues({ ...values, error: false, loading: true });
@@ -124,28 +128,73 @@ const Instruction = () => {
     }));
   };
 
-  useEffect(() => {
-    navigator.mediaDevices
-      .getUserMedia({
-        video: {
-          height: 200,
-          width: 300,
-        },
-        audio: false,
-      })
-      .then((stream) => {
-        setValues((values) => ({
-          ...values,
-          isCameraOne: true,
-        }));
+  const initializeWebcam = useCallback(async () => {
+    try {
+      const token = await isAuthenticated();
+      if (!token) {
+        setValues(prev => ({ ...prev, error: "Authentication required" }));
+        return;
+      }
+
+      // Connect to WebSocket
+      await webSocketService.connect(token);
+      
+      // Start video streaming
+      const stream = await webSocketService.startVideoStreaming();
+      
+      setValues(prev => ({
+        ...prev,
+        isCameraOne: true,
+      }));
+
+      // Set video source for display
+      if (document.getElementById("cam")) {
         document.getElementById("cam").srcObject = stream;
-      })
-      .catch((err) => console.log("Error But Y?" + err));
+      }
+
+      // Send stream info
+      webSocketService.sendStreamUpdate({
+        testId: id,
+        status: 'preparing',
+        stage: 'instructions'
+      });
+
+    } catch (error) {
+      console.error("Webcam initialization error:", error);
+      let errorMessage = "Camera access denied or not available";
+      
+      if (error.message.includes('Camera access denied')) {
+        errorMessage = "Camera access denied. Please allow camera permissions and refresh the page.";
+      } else if (error.message.includes('No camera found')) {
+        errorMessage = "No camera found. Please connect a camera and try again.";
+      } else if (error.message.includes('Camera is already in use')) {
+        errorMessage = "Camera is already in use by another application. Please close other applications using the camera.";
+      } else if (error.message.includes('HTTPS or localhost')) {
+        errorMessage = "Camera access requires HTTPS or localhost. Please use a secure connection.";
+      } else if (error.message.includes('not supported')) {
+        errorMessage = "Camera access not supported in this browser. Please use a modern browser.";
+      } else if (error.message.includes('WebSocket not connected')) {
+        errorMessage = "Cannot connect to server. Please check your internet connection and try again.";
+      }
+      
+      setValues(prev => ({
+        ...prev,
+        error: errorMessage,
+        isCameraOne: false,
+      }));
+    }
+  }, [id]);
+
+  useEffect(() => {
+    initializeWebcam();
+
     return function cleanup() {
+      webSocketService.stopVideoStreaming();
+      webSocketService.disconnect();
       localStorage.removeItem("optional")
       localStorage.removeItem("mandatoryCategory")
     };
-  }, []);
+  }, [id, initializeWebcam]);
 
   const classes = useStyles();
 
@@ -226,7 +275,7 @@ const Instruction = () => {
                   </div>
                   <div className="row">
                     <div className="col-12">
-                      <Webcam id="cam" style={{ width: "inherit" }} />
+                      <Webcam id="cam" style={{ width: "100%", maxWidth: "320px", height: "240px", margin: "0 auto", display: "block" }} />
                     </div>
                   </div>
                   <div className="row">
@@ -284,6 +333,23 @@ const Instruction = () => {
                       </div>
                     </div>
                   </div>
+                  {showCameraTest && (
+                    <div className="row" style={{ marginTop: "20px" }}>
+                      <div className="col-md-12">
+                        <CameraTest
+                          onCameraReady={() => {
+                            setValues(prev => ({ ...prev, showCameraTest: false, error: "" }));
+                            document.getElementById("errorText").classList.remove("d-block");
+                            // Retry camera initialization
+                            initializeWebcam();
+                          }}
+                          onError={(errorMsg) => {
+                            setValues(prev => ({ ...prev, error: errorMsg }));
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </Paper>
               </Grid>
             </Grid>

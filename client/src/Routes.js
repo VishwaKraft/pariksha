@@ -15,6 +15,7 @@ import SignIn from "./components/admin/Signin";
 import AdminRoute from "./routes/AdminRoute";
 import Main from "./components/admin/Main";
 import UserAdmin from "./components/admin/User";
+import WebcamMonitor from "./components/admin/WebcamMonitor";
 import Feedback from "./components/feedback";
 import Question from "./components/questions";
 
@@ -28,6 +29,7 @@ export default class App extends Component {
           </Route>
           <AdminRoute path="/admin/main" component={Main} />
           <AdminRoute path="/admin/user" component={UserAdmin} />
+          <AdminRoute path="/admin/webcam" component={WebcamMonitor} />
           <AdminRoute path="/admin/question/manage" component={QuestionManageAdmin} />
           <AdminRoute path="/admin/question/create" component={QuestionCreateAdmin} />
           <AdminRoute path="/admin/feedback" component={FeedbackAdmin} />

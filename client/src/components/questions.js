@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 // import PropTypes from 'prop-types';
 import NavBar from "./nav";
 import { cheatingCounter } from "../helper/Test";
 import { submitAnswer, endTest } from "../helper/Test";
 import { Modal } from "react-bootstrap";
 import Webcam from "react-webcam";
+import webSocketService from "../helper/WebSocketService";
+import { isAuthenticated } from "../helper/Auth";
 
 import CircularProgress from "@material-ui/core/CircularProgress";
 import { Paper, Button } from "@material-ui/core";
@@ -362,23 +364,81 @@ const Questions = (props) => {
   };
 
   useEffect(() => {
-    navigator.mediaDevices
-      .getUserMedia({
-        video: {
-          height: 200,
-          width: 300,
-        },
-        audio: false,
-      })
-      .then((stream) => {
-        setValues((values) => ({
-          ...values,
+    const initializeWebcam = async () => {
+      try {
+        const token = await isAuthenticated();
+        if (!token) {
+          setValues(prev => ({ ...prev, error: "Authentication required" }));
+          return;
+        }
+
+        // Connect to WebSocket
+        await webSocketService.connect(token);
+
+        // Start video streaming
+        const stream = await webSocketService.startVideoStreaming();
+
+        setValues(prev => ({
+          ...prev,
           isCameraOne: true,
+          isStreaming: true,
         }));
-        document.getElementById("cam").srcObject = stream;
-      })
-      .catch((err) => console.log("Error But Y? " + err));
-  }, [videoRef]);
+
+        // Set video source for display
+        if (document.getElementById("cam")) {
+          document.getElementById("cam").srcObject = stream;
+        }
+
+        // Send periodic updates
+        const updateInterval = setInterval(() => {
+          webSocketService.sendStreamUpdate({
+            testId: localStorage.getItem("testId"),
+            questionIndex: index,
+            timeRemaining: `${hour}:${minute}:${second}`,
+            status: 'active'
+          });
+        }, 5000);
+
+        // Cleanup function
+        return () => {
+          clearInterval(updateInterval);
+          webSocketService.stopVideoStreaming();
+        };
+      } catch (error) {
+        console.error("Webcam initialization error:", error);
+        let errorMessage = "Camera access denied or not available";
+
+        if (error.message.includes('Camera access denied')) {
+          errorMessage = "Camera access denied. Please allow camera permissions and refresh the page.";
+        } else if (error.message.includes('No camera found')) {
+          errorMessage = "No camera found. Please connect a camera and try again.";
+        } else if (error.message.includes('Camera is already in use')) {
+          errorMessage = "Camera is already in use by another application. Please close other applications using the camera.";
+        } else if (error.message.includes('HTTPS or localhost')) {
+          errorMessage = "Camera access requires HTTPS or localhost. Please use a secure connection.";
+        } else if (error.message.includes('not supported')) {
+          errorMessage = "Camera access not supported in this browser. Please use a modern browser.";
+        } else if (error.message.includes('WebSocket not connected')) {
+          errorMessage = "Cannot connect to server. Please check your internet connection and try again.";
+        }
+
+        setValues(prev => ({
+          ...prev,
+          error: errorMessage,
+          isCameraOne: false,
+          isStreaming: false,
+        }));
+      }
+    };
+
+    initializeWebcam();
+
+    // Cleanup on unmount
+    return () => {
+      webSocketService.stopVideoStreaming();
+      webSocketService.disconnect();
+    };
+  }, [hour, minute, second, index]);
 
   const questionPaper = () => {
     return (
