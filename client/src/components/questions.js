@@ -5,6 +5,8 @@ import { cheatingCounter } from "../helper/Test";
 import { submitAnswer, endTest } from "../helper/Test";
 import { Modal } from "react-bootstrap";
 import Webcam from "react-webcam";
+import webSocketService from "../helper/WebSocketService";
+import { isAuthenticated } from "../helper/Auth";
 
 import CircularProgress from "@material-ui/core/CircularProgress";
 import { Paper, Button } from "@material-ui/core";
@@ -48,10 +50,43 @@ const Questions = (props) => {
       mark: mark,
       index: 0,
       loading: false,
-      isCameraOne: false,
+      // Camera was already confirmed on the instruction page — default true
+      isCameraOne: true,
       error: "",
     };
   });
+
+  // Connect to WebSocket and start streaming for the duration of the exam
+  useEffect(() => {
+    const token = isAuthenticated();
+    if (!token) return;
+
+    const startStreaming = async () => {
+      try {
+        await webSocketService.connect(token);
+        await webSocketService.startVideoStreaming();
+        const testObj = JSON.parse(localStorage.getItem("test")) || {};
+        webSocketService.sendStreamUpdate({
+          testId: testObj._id,
+          testName: testObj.title || 'Unknown Test',
+          status: 'active',
+          stage: 'exam'
+        });
+        console.log('Webcam streaming active during exam');
+      } catch (err) {
+        // Non-fatal — log but don't block the exam
+        console.warn('Webcam streaming unavailable during exam:', err.message);
+      }
+    };
+
+    startStreaming();
+
+    return () => {
+      webSocketService.stopVideoStreaming();
+      webSocketService.disconnect();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [show, setShow] = useState(false);
   const handleClose = () => setShow(false);
@@ -362,23 +397,81 @@ const Questions = (props) => {
   };
 
   useEffect(() => {
-    navigator.mediaDevices
-      .getUserMedia({
-        video: {
-          height: 200,
-          width: 300,
-        },
-        audio: false,
-      })
-      .then((stream) => {
-        setValues((values) => ({
-          ...values,
+    const initializeWebcam = async () => {
+      try {
+        const token = await isAuthenticated();
+        if (!token) {
+          setValues(prev => ({ ...prev, error: "Authentication required" }));
+          return;
+        }
+
+        // Connect to WebSocket
+        await webSocketService.connect(token);
+
+        // Start video streaming
+        const stream = await webSocketService.startVideoStreaming();
+
+        setValues(prev => ({
+          ...prev,
           isCameraOne: true,
+          isStreaming: true,
         }));
-        document.getElementById("cam").srcObject = stream;
-      })
-      .catch((err) => console.log("Error But Y? " + err));
-  }, [videoRef]);
+
+        // Set video source for display
+        if (document.getElementById("cam")) {
+          document.getElementById("cam").srcObject = stream;
+        }
+
+        // Send periodic updates
+        const updateInterval = setInterval(() => {
+          webSocketService.sendStreamUpdate({
+            testId: localStorage.getItem("testId"),
+            questionIndex: index,
+            timeRemaining: `${hour}:${minute}:${second}`,
+            status: 'active'
+          });
+        }, 5000);
+
+        // Cleanup function
+        return () => {
+          clearInterval(updateInterval);
+          webSocketService.stopVideoStreaming();
+        };
+      } catch (error) {
+        console.error("Webcam initialization error:", error);
+        let errorMessage = "Camera access denied or not available";
+
+        if (error.message.includes('Camera access denied')) {
+          errorMessage = "Camera access denied. Please allow camera permissions and refresh the page.";
+        } else if (error.message.includes('No camera found')) {
+          errorMessage = "No camera found. Please connect a camera and try again.";
+        } else if (error.message.includes('Camera is already in use')) {
+          errorMessage = "Camera is already in use by another application. Please close other applications using the camera.";
+        } else if (error.message.includes('HTTPS or localhost')) {
+          errorMessage = "Camera access requires HTTPS or localhost. Please use a secure connection.";
+        } else if (error.message.includes('not supported')) {
+          errorMessage = "Camera access not supported in this browser. Please use a modern browser.";
+        } else if (error.message.includes('WebSocket not connected')) {
+          errorMessage = "Cannot connect to server. Please check your internet connection and try again.";
+        }
+
+        setValues(prev => ({
+          ...prev,
+          error: errorMessage,
+          isCameraOne: false,
+          isStreaming: false,
+        }));
+      }
+    };
+
+    initializeWebcam();
+
+    // Cleanup on unmount
+    return () => {
+      webSocketService.stopVideoStreaming();
+      webSocketService.disconnect();
+    };
+  }, [hour, minute, second, index]);
 
   const questionPaper = () => {
     return (

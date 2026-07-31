@@ -71,7 +71,9 @@ exports.authStudent = async (req, res, next) => {
   if (result.success === true && result.token != undefined) {
     try {
       const decoded = await jwt.verify(result.token, process.env.TOKEN_SECRET);
-      if (decoded.user) {
+      // Admin token has decoded.user === "admin" (a string, not a valid ObjectId).
+      // Reject it here to prevent downstream MongoDB cast errors.
+      if (decoded.user && decoded.user !== 'admin') {
         req.user = decoded.user;
         next();
       } else {
