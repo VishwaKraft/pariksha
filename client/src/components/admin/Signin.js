@@ -71,7 +71,7 @@ function SignInSide(props) {
             alert(data.error.message);
           } else {
             authenticate(data.data,()=>{
-              props.history.push('../admin/main');
+              props.history.push('/admin/main');
             });
           }
         })

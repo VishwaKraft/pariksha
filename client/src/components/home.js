@@ -21,7 +21,10 @@ function Home(props) {
   useEffect(() => {
     async function getAuthStatus() {
       const token = await isAuthenticated();
-      if (!!token) props.history.push("/student/dashboard");
+      if (!!token) {
+        const { from } = props.location.state || { from: { pathname: "/student/dashboard" } };
+        props.history.push(from);
+      }
     }
     getAuthStatus();
   }, [props.history]);
@@ -40,15 +43,16 @@ function Home(props) {
     signin({ email, password })
       .then((data) => {
         if (!data) {
-           setValues({ ...values, error: "Network error. Make sure you are using HTTP (not HTTPS) to avoid mixed content.", loading: false });
-           return;
+          setValues({ ...values, error: "Network error. Make sure you are using HTTP (not HTTPS) to avoid mixed content.", loading: false });
+          return;
         }
         if (data.success === false) {
           setValues({ ...values, error: data.error.message || data.error, loading: false });
         } else {
           authenticate(data.data, () => {
             toast.success("Welcome back!");
-            props.history.push("/student/dashboard");
+            const { from } = props.location.state || { from: { pathname: "/student/dashboard" } };
+            props.history.push(from);
           });
         }
       })
@@ -72,7 +76,8 @@ function Home(props) {
       }
       authenticate(data.data, () => {
         toast.success("Welcome back!");
-        props.history.push("/student/dashboard");
+        const { from } = props.location.state || { from: { pathname: "/student/dashboard" } };
+        props.history.push(from);
       });
     } catch {
       toast.error("Authentication error occurred!");
@@ -365,8 +370,8 @@ function Home(props) {
           <div className="feature-list">
             {[
               { icon: "🎥", cls: "fi-purple", text: "Live webcam monitoring for every test session" },
-              { icon: "⚡", cls: "fi-blue",   text: "Instant results and detailed performance reports" },
-              { icon: "🔒", cls: "fi-green",  text: "Anti-tab-switch detection & integrity checks" },
+              { icon: "⚡", cls: "fi-blue", text: "Instant results and detailed performance reports" },
+              { icon: "🔒", cls: "fi-green", text: "Anti-tab-switch detection & integrity checks" },
             ].map(({ icon, cls, text }) => (
               <div className="feature-item" key={text}>
                 <div className={`feature-icon ${cls}`}>{icon}</div>

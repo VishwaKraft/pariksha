@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 // import PropTypes from 'prop-types';
 import NavBar from "./nav";
 import { cheatingCounter } from "../helper/Test";
@@ -12,7 +12,6 @@ import CircularProgress from "@material-ui/core/CircularProgress";
 import { Paper, Button } from "@material-ui/core";
 import { withRouter } from "react-router";
 const Questions = (props) => {
-  const videoRef = useRef(null);
 
   const getLocalStorageItem = (key, defaultValue) => {
     try {
@@ -85,7 +84,7 @@ const Questions = (props) => {
       webSocketService.stopVideoStreaming();
       webSocketService.disconnect();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const [show, setShow] = useState(false);
