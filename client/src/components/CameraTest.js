@@ -19,10 +19,7 @@ const CameraTest = ({ onCameraReady, onError }) => {
     setError(null);
 
     try {
-      // Check if we're on HTTPS or localhost
-      if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-        throw new Error('Camera access requires HTTPS or localhost');
-      }
+      // Let the browser handle security restrictions (e.g. NotAllowedError)
 
       // Test camera access
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -53,7 +50,7 @@ const CameraTest = ({ onCameraReady, onError }) => {
       } else if (error.name === 'SecurityError') {
         errorMessage = 'Camera access blocked due to security restrictions. Please use HTTPS or localhost.';
       } else if (error.message.includes('HTTPS or localhost')) {
-        errorMessage = 'Camera access requires HTTPS or localhost. Please use a secure connection.';
+        errorMessage = 'Camera access requires a secure connection (HTTPS) or localhost.';
       }
       
       setError(errorMessage);

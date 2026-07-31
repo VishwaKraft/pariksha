@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 // import PropTypes from 'prop-types';
 import NavBar from "./nav";
 import { cheatingCounter } from "../helper/Test";
@@ -50,10 +50,43 @@ const Questions = (props) => {
       mark: mark,
       index: 0,
       loading: false,
-      isCameraOne: false,
+      // Camera was already confirmed on the instruction page — default true
+      isCameraOne: true,
       error: "",
     };
   });
+
+  // Connect to WebSocket and start streaming for the duration of the exam
+  useEffect(() => {
+    const token = isAuthenticated();
+    if (!token) return;
+
+    const startStreaming = async () => {
+      try {
+        await webSocketService.connect(token);
+        await webSocketService.startVideoStreaming();
+        const testObj = JSON.parse(localStorage.getItem("test")) || {};
+        webSocketService.sendStreamUpdate({
+          testId: testObj._id,
+          testName: testObj.title || 'Unknown Test',
+          status: 'active',
+          stage: 'exam'
+        });
+        console.log('Webcam streaming active during exam');
+      } catch (err) {
+        // Non-fatal — log but don't block the exam
+        console.warn('Webcam streaming unavailable during exam:', err.message);
+      }
+    };
+
+    startStreaming();
+
+    return () => {
+      webSocketService.stopVideoStreaming();
+      webSocketService.disconnect();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [show, setShow] = useState(false);
   const handleClose = () => setShow(false);

@@ -130,53 +130,59 @@ const Instruction = () => {
 
   const initializeWebcam = useCallback(async () => {
     try {
-      const token = await isAuthenticated();
-      if (!token) {
-        setValues(prev => ({ ...prev, error: "Authentication required" }));
-        return;
+      // Step 1: Verify camera access first (independent of WebSocket)
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Camera access not supported in this browser');
       }
 
-      // Connect to WebSocket
-      await webSocketService.connect(token);
-      
-      // Start video streaming
-      const stream = await webSocketService.startVideoStreaming();
-      
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 15, max: 30 } },
+        audio: false
+      });
+
+      // Camera is confirmed working — mark it on immediately
       setValues(prev => ({
         ...prev,
         isCameraOne: true,
+        error: "",
       }));
 
-      // Set video source for display
-      if (document.getElementById("cam")) {
-        document.getElementById("cam").srcObject = stream;
-      }
+      // Stop this probe stream (Webcam component manages its own stream)
+      stream.getTracks().forEach(track => track.stop());
 
-      // Send stream info
-      webSocketService.sendStreamUpdate({
-        testId: id,
-        status: 'preparing',
-        stage: 'instructions'
-      });
+      // Step 2: Try WebSocket (non-blocking — failure won't prevent test start)
+      try {
+        const token = isAuthenticated();
+        if (token) {
+          await webSocketService.connect(token);
+          await webSocketService.startVideoStreaming();
+          const testObj = JSON.parse(localStorage.getItem("test")) || {};
+          webSocketService.sendStreamUpdate({
+            testId: id,
+            testName: testObj.title || 'Unknown Test',
+            status: 'preparing',
+            stage: 'instructions'
+          });
+        }
+      } catch (wsError) {
+        // WebSocket failure is non-fatal — camera is still confirmed on
+        console.warn("WebSocket streaming unavailable (non-fatal):", wsError.message);
+      }
 
     } catch (error) {
       console.error("Webcam initialization error:", error);
       let errorMessage = "Camera access denied or not available";
-      
-      if (error.message.includes('Camera access denied')) {
+
+      if (error.name === 'NotAllowedError' || error.message.includes('Camera access denied')) {
         errorMessage = "Camera access denied. Please allow camera permissions and refresh the page.";
-      } else if (error.message.includes('No camera found')) {
+      } else if (error.name === 'NotFoundError' || error.message.includes('No camera found')) {
         errorMessage = "No camera found. Please connect a camera and try again.";
-      } else if (error.message.includes('Camera is already in use')) {
-        errorMessage = "Camera is already in use by another application. Please close other applications using the camera.";
-      } else if (error.message.includes('HTTPS or localhost')) {
-        errorMessage = "Camera access requires HTTPS or localhost. Please use a secure connection.";
+      } else if (error.name === 'NotReadableError' || error.message.includes('already in use')) {
+        errorMessage = "Camera is already in use by another application. Please close other apps using the camera.";
       } else if (error.message.includes('not supported')) {
-        errorMessage = "Camera access not supported in this browser. Please use a modern browser.";
-      } else if (error.message.includes('WebSocket not connected')) {
-        errorMessage = "Cannot connect to server. Please check your internet connection and try again.";
+        errorMessage = "Camera access not supported in this browser. Please use Chrome or Firefox.";
       }
-      
+
       setValues(prev => ({
         ...prev,
         error: errorMessage,
@@ -189,10 +195,10 @@ const Instruction = () => {
     initializeWebcam();
 
     return function cleanup() {
+      // Stop video streaming but don't disconnect — questions.js will reconnect
       webSocketService.stopVideoStreaming();
-      webSocketService.disconnect();
-      localStorage.removeItem("optional")
-      localStorage.removeItem("mandatoryCategory")
+      localStorage.removeItem("optional");
+      localStorage.removeItem("mandatoryCategory");
     };
   }, [id, initializeWebcam]);
 

@@ -4,9 +4,11 @@ class WebSocketService {
   constructor() {
     this.socket = null;
     this.isConnected = false;
-    this.mediaRecorder = null;
     this.stream = null;
-    this.recordingInterval = null;
+    this.frameInterval = null; // canvas snapshot interval
+    this.videoElement = null;  // hidden <video> used for frame capture
+    this.canvas = null;
+    this.ctx = null;
   }
 
   connect(token) {
@@ -15,11 +17,9 @@ class WebSocketService {
     }
 
     return new Promise((resolve, reject) => {
-      this.socket = io(process.env.REACT_APP_API_URL || 'http://localhost:5000', {
+      this.socket = io(process.env.REACT_APP_API_URL || 'http://localhost:3000', {
         transports: ['websocket'],
-        auth: {
-          token: token
-        }
+        auth: { token },
       });
 
       this.socket.on('connect', () => {
@@ -43,123 +43,90 @@ class WebSocketService {
   }
 
   disconnect() {
+    this.stopVideoStreaming();
     if (this.socket) {
-      this.stopVideoStreaming();
       this.socket.disconnect();
       this.socket = null;
       this.isConnected = false;
     }
   }
 
+  /**
+   * Start streaming: get camera stream, then send canvas snapshots every 500ms.
+   * Returns the MediaStream so the caller can attach it to a <video> element.
+   */
   async startVideoStreaming() {
-    if (!this.isConnected) {
-      throw new Error('WebSocket not connected');
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      throw new Error('Camera access not supported in this browser');
     }
 
+    // Acquire camera
+    this.stream = await navigator.mediaDevices.getUserMedia({
+      video: { width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 15 } },
+      audio: false,
+    });
+
+    // Off-screen <video> to draw frames from
+    this.videoElement = document.createElement('video');
+    this.videoElement.srcObject = this.stream;
+    this.videoElement.muted = true;
+    this.videoElement.playsInline = true;
+    await this.videoElement.play();
+
+    // Off-screen <canvas> for JPEG encoding
+    this.canvas = document.createElement('canvas');
+    this.canvas.width = 320;  // downscale to save bandwidth
+    this.canvas.height = 240;
+    this.ctx = this.canvas.getContext('2d');
+
+    // Send a snapshot frame every 500ms
+    this.frameInterval = setInterval(() => {
+      this._captureAndSend();
+    }, 500);
+
+    console.log('Video streaming started (canvas snapshot mode)');
+    return this.stream;
+  }
+
+  _captureAndSend() {
+    if (!this.isConnected || !this.ctx || !this.videoElement) return;
     try {
-      // Check if getUserMedia is supported
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error('Camera access not supported in this browser');
-      }
-
-      // Check if we're on HTTPS or localhost
-      if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-        throw new Error('Camera access requires HTTPS or localhost');
-      }
-
-      // Get user media
-      this.stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          width: { ideal: 640 },
-          height: { ideal: 480 },
-          frameRate: { ideal: 15, max: 30 }
-        },
-        audio: false
-      });
-
-      // Create MediaRecorder
-      this.mediaRecorder = new MediaRecorder(this.stream, {
-        mimeType: 'video/webm;codecs=vp8',
-        videoBitsPerSecond: 250000 // 250kbps
-      });
-
-      // Handle data available
-      this.mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0 && this.isConnected) {
-          this.socket.emit('videoStream', {
-            chunk: event.data
-          });
-        }
-      };
-
-      // Start recording in chunks
-      this.mediaRecorder.start(1000); // 1 second chunks
-
-      // Send stream info to server
-      this.socket.emit('videoStream', {
-        type: 'info',
-        width: 640,
-        height: 480,
-        frameRate: 15
-      });
-
-      console.log('Video streaming started');
-      return this.stream;
-    } catch (error) {
-      console.error('Error starting video stream:', error);
-      
-      // Provide more specific error messages
-      if (error.name === 'NotAllowedError') {
-        throw new Error('Camera access denied. Please allow camera permissions and refresh the page.');
-      } else if (error.name === 'NotFoundError') {
-        throw new Error('No camera found. Please connect a camera and try again.');
-      } else if (error.name === 'NotReadableError') {
-        throw new Error('Camera is already in use by another application.');
-      } else if (error.name === 'OverconstrainedError') {
-        throw new Error('Camera constraints cannot be satisfied. Please try a different camera.');
-      } else if (error.name === 'SecurityError') {
-        throw new Error('Camera access blocked due to security restrictions. Please use HTTPS or localhost.');
-      }
-      
-      throw error;
+      this.ctx.drawImage(this.videoElement, 0, 0, this.canvas.width, this.canvas.height);
+      const frame = this.canvas.toDataURL('image/jpeg', 0.6); // 60% quality
+      this.socket.emit('videoFrame', { frame });
+    } catch (e) {
+      // video not ready yet — skip frame
     }
   }
 
   stopVideoStreaming() {
-    if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
-      this.mediaRecorder.stop();
+    if (this.frameInterval) {
+      clearInterval(this.frameInterval);
+      this.frameInterval = null;
     }
-
+    if (this.videoElement) {
+      this.videoElement.pause();
+      this.videoElement.srcObject = null;
+      this.videoElement = null;
+    }
     if (this.stream) {
-      this.stream.getTracks().forEach(track => track.stop());
+      this.stream.getTracks().forEach((track) => track.stop());
       this.stream = null;
     }
-
-    if (this.recordingInterval) {
-      clearInterval(this.recordingInterval);
-      this.recordingInterval = null;
-    }
-
+    this.canvas = null;
+    this.ctx = null;
     console.log('Video streaming stopped');
   }
 
   sendStreamUpdate(data) {
-    if (this.isConnected) {
+    if (this.isConnected && this.socket) {
       this.socket.emit('streamUpdate', data);
     }
   }
 
-  // Method to get the video stream for display
-  getVideoStream() {
-    return this.stream;
-  }
-
-  // Method to check if streaming is active
-  isStreaming() {
-    return this.mediaRecorder && this.mediaRecorder.state === 'recording';
-  }
+  getVideoStream() { return this.stream; }
+  isStreaming() { return this.frameInterval !== null; }
 }
 
-// Create singleton instance
 const webSocketService = new WebSocketService();
 export default webSocketService;

@@ -2,7 +2,7 @@ import { isAuthenticated } from "./Auth";
 export const getTestToken = async (id) => {
   const token = await isAuthenticated();
   return fetch(
-    process.env.REACT_APP_API_URL + `/student/test-token/` + id,
+    process.env.REACT_APP_API_URL + `/api/student/test-token/` + id,
     {
       method: "GET",
       headers: {
@@ -22,9 +22,9 @@ export const getQuestions = async (lang) => {
   const token = localStorage.getItem("test-token");
   let url
   if (lang) {
-    url = process.env.REACT_APP_API_URL + `/test/get-questions?category=` + lang
+    url = process.env.REACT_APP_API_URL + `/api/test/get-questions?category=` + lang
   } else {
-    url = process.env.REACT_APP_API_URL + `/test/get-questions`
+    url = process.env.REACT_APP_API_URL + `/api/test/get-questions`
   }
   return fetch(
     url,
@@ -45,7 +45,7 @@ export const getQuestions = async (lang) => {
 
 export const submitAnswer = (res) => {
   const token = localStorage.getItem("test-token");
-  return fetch(process.env.REACT_APP_API_URL + `/test/submit-responses`, {
+  return fetch(process.env.REACT_APP_API_URL + `/api/test/submit-responses`, {
     method: "POST",
     headers: {
       Accept: "application/json",
@@ -62,7 +62,7 @@ export const submitAnswer = (res) => {
 
 export const endTest = (res) => {
   const token = localStorage.getItem("test-token");
-  return fetch(process.env.REACT_APP_API_URL + `/test/end-test`, {
+  return fetch(process.env.REACT_APP_API_URL + `/api/test/end-test`, {
     method: "POST",
     headers: {
       Accept: "application/json",
@@ -79,7 +79,7 @@ export const endTest = (res) => {
 
 export const submitFeedback = (res) => {
   const token = isAuthenticated();
-  return fetch(process.env.REACT_APP_API_URL + `/student/submit-feedback`, {
+  return fetch(process.env.REACT_APP_API_URL + `/api/student/submit-feedback`, {
     method: "POST",
     headers: {
       Accept: "application/json",
@@ -96,7 +96,7 @@ export const submitFeedback = (res) => {
 
 export const cheatingCounter = () => {
   const token = localStorage.getItem("test-token");
-  return fetch(process.env.REACT_APP_API_URL + `/test/unfairAttempt`, {
+  return fetch(process.env.REACT_APP_API_URL + `/api/test/unfairAttempt`, {
     method: "PATCH",
     headers: {
       Accept: "application/json",
@@ -114,7 +114,7 @@ export const getTests = async () => {
   const token = await isAuthenticated();
   if (token === false) return false;
   return fetch(
-    process.env.REACT_APP_API_URL + `/student/tests`,
+    process.env.REACT_APP_API_URL + `/api/student/tests`,
     {
       method: "GET",
       headers: {
@@ -133,7 +133,7 @@ export const getTests = async () => {
 export const selectTest = async (id) => {
   const token = await isAuthenticated();
   return fetch(
-    process.env.REACT_APP_API_URL + `/student/test/${id}`,
+    process.env.REACT_APP_API_URL + `/api/student/test/${id}`,
     {
       method: "GET",
       headers: {

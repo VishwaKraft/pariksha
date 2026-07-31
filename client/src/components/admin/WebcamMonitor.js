@@ -1,33 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  Grid,
-  Paper,
-  Typography,
-  Box,
-  Card,
-  CardContent,
-  Chip,
-  IconButton,
-  Tooltip,
-  CircularProgress
+  Grid, Paper, Typography, Box, Card, CardContent,
+  Chip, IconButton, Tooltip, CircularProgress
 } from '@material-ui/core';
-import {
-  VideocamOff,
-  Person,
-  Refresh,
-  Fullscreen,
-  FullscreenExit
-} from '@material-ui/icons';
+import { VideocamOff, Person, Refresh, Fullscreen, FullscreenExit } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/core/styles';
 import io from 'socket.io-client';
+import { isAuthenticated } from '../../helper/Auth';
 
 const useStyles = makeStyles((theme) => ({
-  root: {
-    padding: theme.spacing(2),
-  },
-  monitorGrid: {
-    marginTop: theme.spacing(2),
-  },
+  root: { padding: theme.spacing(2) },
+  monitorGrid: { marginTop: theme.spacing(2) },
   videoCard: {
     position: 'relative',
     marginBottom: theme.spacing(2),
@@ -37,25 +20,23 @@ const useStyles = makeStyles((theme) => ({
     position: 'relative',
     width: '100%',
     height: '200px',
-    backgroundColor: '#000',
+    backgroundColor: '#111',
     borderRadius: theme.shape.borderRadius,
     overflow: 'hidden',
   },
-  video: {
+  snapshot: {
     width: '100%',
     height: '100%',
     objectFit: 'cover',
+    display: 'block',
   },
   videoOverlay: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    top: 0, left: 0, right: 0, bottom: 0,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: 'rgba(0,0,0,0.75)',
     color: 'white',
   },
   userInfo: {
@@ -76,9 +57,7 @@ const useStyles = makeStyles((theme) => ({
     right: theme.spacing(1),
     zIndex: 1,
   },
-  statsCard: {
-    marginBottom: theme.spacing(2),
-  },
+  statsCard: { marginBottom: theme.spacing(2) },
   noStreams: {
     textAlign: 'center',
     padding: theme.spacing(4),
@@ -90,247 +69,253 @@ const useStyles = makeStyles((theme) => ({
     alignItems: 'center',
     height: '200px',
   },
+  fullscreenOverlay: {
+    position: 'fixed',
+    top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'black',
+    zIndex: 9999,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 }));
 
 const WebcamMonitor = () => {
   const classes = useStyles();
   const [activeStreams, setActiveStreams] = useState({});
-  const [stats, setStats] = useState({
-    totalStreams: 0,
-    activeStreams: 0,
-    disconnectedStreams: 0,
-  });
+  const [stats, setStats] = useState({ total: 0, active: 0, disconnected: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [fullscreenStream, setFullscreenStream] = useState(null);
+  const [fullscreenId, setFullscreenId] = useState(null);
+  const fullscreenIdRef = useRef(null);
   const socketRef = useRef(null);
-  const videoRefs = useRef({});
+  // userId -> latest frame src
+  const frameRefs = useRef({});
+  // userId -> last seen timestamp (to avoid stale React state in the interval)
+  const lastSeenRefs = useRef({});
+  // img element refs for fullscreen
+  const fullscreenImgRef = useRef(null);
 
   useEffect(() => {
-    // Initialize socket connection
-    socketRef.current = io(process.env.REACT_APP_API_URL || 'http://localhost:5000', {
+    const token = isAuthenticated();
+
+    socketRef.current = io(process.env.REACT_APP_API_URL || 'http://localhost:3000', {
       transports: ['websocket'],
+      auth: { token }, // ← send admin JWT so server can authenticate
     });
 
     socketRef.current.on('connect', () => {
-      console.log('Connected to monitoring server');
+      console.log('Admin monitoring connected');
       setLoading(false);
       setError(null);
+      // Ask for any already-active streams
+      socketRef.current.emit('requestStreams');
     });
 
     socketRef.current.on('connect_error', (err) => {
-      console.error('Connection error:', err);
-      setError('Failed to connect to monitoring server');
+      console.error('Monitoring connection error:', err.message);
+      setError('Failed to connect to monitoring server: ' + err.message);
       setLoading(false);
     });
 
-    // Listen for active streams list
+    // Full snapshot of currently-active streams on connect
     socketRef.current.on('activeStreams', (streams) => {
-      console.log('Received active streams:', streams);
-      const streamsMap = {};
-      streams.forEach(stream => {
-        streamsMap[stream.userId] = {
-          ...stream,
-          lastSeen: Date.now(),
+      const map = {};
+      streams.forEach((s) => { map[s.userId] = { ...s, lastSeen: Date.now() }; });
+      setActiveStreams(map);
+    });
+
+    // A new student just connected (no frame yet)
+    socketRef.current.on('studentConnected', (data) => {
+      lastSeenRefs.current[data.userId] = Date.now();
+      setActiveStreams((prev) => ({
+        ...prev,
+        [data.userId]: { ...prev[data.userId], ...data, lastSeen: Date.now() },
+      }));
+    });
+
+    // Incoming camera frame (base64 JPEG)
+    socketRef.current.on('videoFrame', (data) => {
+      const { userId, frame, userName } = data;
+
+      // Update img element directly (no React re-render per frame)
+      const imgEl = frameRefs.current[userId];
+      if (imgEl) imgEl.src = frame;
+      lastSeenRefs.current[userId] = Date.now();
+
+      // Update fullscreen img too if this user is fullscreened
+      if (fullscreenImgRef.current && fullscreenIdRef.current === userId) {
+        fullscreenImgRef.current.src = frame;
+      }
+
+      // Only update React state for status/meta changes
+      setActiveStreams((prev) => {
+        if (prev[userId]?.status === 'active') return prev; // avoid needless re-renders
+        return {
+          ...prev,
+          [userId]: {
+            ...prev[userId],
+            userId,
+            userName: userName || prev[userId]?.userName,
+            status: 'active',
+            lastSeen: Date.now(),
+          },
         };
       });
-      setActiveStreams(streamsMap);
     });
 
-    // Listen for new video streams
-    socketRef.current.on('videoStream', (data) => {
-      console.log('Received video stream:', data);
-      setActiveStreams(prev => ({
-        ...prev,
-        [data.userId]: {
-          ...prev[data.userId],
-          ...data,
-          lastSeen: Date.now(),
-          status: 'active',
-        },
-      }));
-    });
-
-    // Listen for stream updates
+    // Stream metadata update
     socketRef.current.on('streamUpdate', (data) => {
-      setActiveStreams(prev => ({
+      if (data.userId) lastSeenRefs.current[data.userId] = Date.now();
+      setActiveStreams((prev) => ({
         ...prev,
-        [data.userId]: {
-          ...prev[data.userId],
-          ...data,
-          lastSeen: Date.now(),
-        },
+        [data.userId]: { ...prev[data.userId], ...data, lastSeen: Date.now() },
       }));
     });
 
-    // Listen for stream disconnections
+    // Student disconnected
     socketRef.current.on('streamDisconnected', (data) => {
-      setActiveStreams(prev => ({
+      setActiveStreams((prev) => ({
         ...prev,
-        [data.userId]: {
-          ...prev[data.userId],
-          status: 'disconnected',
-          lastSeen: Date.now(),
-        },
+        [data.userId]: { ...prev[data.userId], status: 'disconnected', lastSeen: Date.now() },
       }));
     });
 
-    // Listen for video data
-    socketRef.current.on('videoData', (data) => {
-      const videoElement = videoRefs.current[data.userId];
-      if (videoElement && data.chunk) {
-        const reader = new FileReader();
-        reader.onload = () => {
-          videoElement.src = reader.result;
-        };
-        reader.readAsDataURL(data.chunk);
-      }
-    });
-
-    // Cleanup on unmount
     return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-      }
+      if (socketRef.current) socketRef.current.disconnect();
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Update stats when streams change
+  // Synchronize fullscreen ref for the websocket closure, 
+  // and immediately copy the latest frame so there's no delay when opening
   useEffect(() => {
-    const streamList = Object.values(activeStreams);
+    fullscreenIdRef.current = fullscreenId;
+    if (fullscreenId && fullscreenImgRef.current && frameRefs.current[fullscreenId]) {
+      fullscreenImgRef.current.src = frameRefs.current[fullscreenId].src;
+    }
+  }, [fullscreenId]);
+
+  // Stats
+  useEffect(() => {
+    const list = Object.values(activeStreams);
     setStats({
-      totalStreams: streamList.length,
-      activeStreams: streamList.filter(s => s.status === 'active').length,
-      disconnectedStreams: streamList.filter(s => s.status === 'disconnected').length,
+      total: list.length,
+      active: list.filter((s) => s.status === 'active').length,
+      disconnected: list.filter((s) => s.status === 'disconnected').length,
     });
   }, [activeStreams]);
 
-  // Check for stale streams
+  // Mark stale streams as disconnected
   useEffect(() => {
     const interval = setInterval(() => {
       const now = Date.now();
-      setActiveStreams(prev => {
+      setActiveStreams((prev) => {
+        let changed = false;
         const updated = { ...prev };
-        Object.keys(updated).forEach(userId => {
-          if (now - updated[userId].lastSeen > 30000) { // 30 seconds timeout
-            updated[userId] = {
-              ...updated[userId],
-              status: 'disconnected',
-            };
+        Object.keys(updated).forEach((uid) => {
+          const lastSeen = lastSeenRefs.current[uid] || updated[uid].lastSeen;
+          if (updated[uid].status === 'active' && now - lastSeen > 10000) {
+            updated[uid] = { ...updated[uid], status: 'disconnected' };
+            changed = true;
           }
         });
-        return updated;
+        return changed ? updated : prev;
       });
     }, 5000);
-
     return () => clearInterval(interval);
   }, []);
 
   const handleRefresh = () => {
     setLoading(true);
-    if (socketRef.current) {
+    if (socketRef.current?.connected) {
       socketRef.current.emit('requestStreams');
+      setTimeout(() => setLoading(false), 1000);
     }
   };
 
-  const handleFullscreen = (userId) => {
-    if (fullscreenStream === userId) {
-      setFullscreenStream(null);
-    } else {
-      setFullscreenStream(userId);
-    }
-  };
+  const getStatusColor = (status) =>
+    status === 'active' ? 'primary' : status === 'connected' ? 'default' : 'secondary';
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'active':
-        return 'success';
-      case 'disconnected':
-        return 'error';
-      default:
-        return 'default';
-    }
-  };
+  const renderVideoCard = (userId, streamData) => (
+    <Grid item xs={12} sm={6} md={4} lg={3} key={userId}>
+      <Card className={classes.videoCard}>
+        <div className={classes.videoContainer}>
 
-  const renderVideoCard = (userId, streamData) => {
-    const isFullscreen = fullscreenStream === userId;
-    
-    return (
-      <Grid item xs={12} sm={6} md={4} lg={3} key={userId}>
-        <Card className={classes.videoCard}>
-          <div className={classes.videoContainer}>
-            <video
-              ref={el => videoRefs.current[userId] = el}
-              className={classes.video}
-              autoPlay
-              muted
-              playsInline
+          {/* Snapshot <img> — updated imperatively via frameRefs to avoid per-frame re-renders */}
+          <img
+            ref={(el) => { frameRefs.current[userId] = el; }}
+            className={classes.snapshot}
+            alt={`cam-${userId}`}
+            style={{ display: streamData.status === 'active' ? 'block' : 'none' }}
+          />
+
+          {/* Placeholder when no stream yet */}
+          {streamData.status !== 'active' && (
+            <div className={classes.videoOverlay}>
+              <Box textAlign="center">
+                <VideocamOff fontSize="large" />
+                <Typography variant="body2" style={{ marginTop: 8 }}>
+                  {streamData.status === 'disconnected' ? 'Disconnected' : 'Waiting for stream…'}
+                </Typography>
+              </Box>
+            </div>
+          )}
+
+          {/* Name badge */}
+          <div className={classes.userInfo}>
+            <Chip
+              icon={<Person />}
+              label={streamData.userName || `User ${userId.slice(0, 8)}`}
+              size="small"
+              color="primary"
+              variant="outlined"
+              style={{ backgroundColor: 'rgba(0,0,0,0.5)', color: 'white', borderColor: 'white' }}
             />
-            {streamData.status !== 'active' && (
-              <div className={classes.videoOverlay}>
-                <Box textAlign="center">
-                  <VideocamOff fontSize="large" />
-                  <Typography variant="body2">
-                    {streamData.status === 'disconnected' ? 'Disconnected' : 'No Stream'}
-                  </Typography>
-                </Box>
-              </div>
-            )}
-            
-            {/* User Info Overlay */}
-            <div className={classes.userInfo}>
-              <Chip
-                icon={<Person />}
-                label={streamData.userName || `User ${userId.slice(0, 8)}`}
-                size="small"
-                color="primary"
-                variant="outlined"
-              />
-            </div>
-
-            {/* Status Chip */}
-            <div className={classes.statusChip}>
-              <Chip
-                label={streamData.status}
-                size="small"
-                color={getStatusColor(streamData.status)}
-                variant="filled"
-              />
-            </div>
-
-            {/* Controls */}
-            <div className={classes.controls}>
-              <Tooltip title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}>
-                <IconButton
-                  size="small"
-                  onClick={() => handleFullscreen(userId)}
-                  style={{ color: 'white' }}
-                >
-                  {isFullscreen ? <FullscreenExit /> : <Fullscreen />}
-                </IconButton>
-              </Tooltip>
-            </div>
           </div>
-          
-          <CardContent>
-            <Typography variant="body2" color="textSecondary">
-              Test: {streamData.testName || 'Unknown'}
-            </Typography>
-            <Typography variant="caption" color="textSecondary">
-              Last seen: {new Date(streamData.lastSeen).toLocaleTimeString()}
-            </Typography>
-          </CardContent>
-        </Card>
-      </Grid>
-    );
-  };
+
+          {/* Status badge */}
+          <div className={classes.statusChip}>
+            <Chip
+              label={streamData.status}
+              size="small"
+              color={getStatusColor(streamData.status)}
+              style={{ textTransform: 'capitalize' }}
+            />
+          </div>
+
+          {/* Fullscreen button */}
+          <div className={classes.controls}>
+            <Tooltip title="Fullscreen">
+              <IconButton
+                size="small"
+                onClick={() => setFullscreenId(userId)}
+                style={{ color: 'white', backgroundColor: 'rgba(0,0,0,0.4)' }}
+              >
+                <Fullscreen />
+              </IconButton>
+            </Tooltip>
+          </div>
+        </div>
+
+        <CardContent style={{ paddingTop: 8, paddingBottom: '8px !important' }}>
+          <Typography variant="body2" color="textSecondary">
+            Test: {streamData.testName || 'Unknown'}
+          </Typography>
+          <Typography variant="caption" color="textSecondary">
+            Last seen: {new Date(streamData.lastSeen).toLocaleTimeString()}
+          </Typography>
+        </CardContent>
+      </Card>
+    </Grid>
+  );
 
   if (loading) {
     return (
       <div className={classes.loadingContainer}>
         <CircularProgress />
         <Typography variant="body1" style={{ marginLeft: 16 }}>
-          Connecting to monitoring server...
+          Connecting to monitoring server…
         </Typography>
       </div>
     );
@@ -339,22 +324,9 @@ const WebcamMonitor = () => {
   if (error) {
     return (
       <Box className={classes.root}>
-        <Paper 
-          style={{ 
-            padding: 16, 
-            backgroundColor: '#ffebee', 
-            border: '1px solid #f44336',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between'
-          }}
-        >
-          <Typography variant="body1" style={{ color: '#d32f2f' }}>
-            {error}
-          </Typography>
-          <IconButton onClick={handleRefresh} color="inherit">
-            <Refresh />
-          </IconButton>
+        <Paper style={{ padding: 16, backgroundColor: '#ffebee', border: '1px solid #f44336', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Typography variant="body1" style={{ color: '#d32f2f' }}>{error}</Typography>
+          <IconButton onClick={handleRefresh}><Refresh /></IconButton>
         </Paper>
       </Box>
     );
@@ -364,114 +336,65 @@ const WebcamMonitor = () => {
 
   return (
     <div className={classes.root}>
-      <Typography variant="h4" gutterBottom>
-        Live Webcam Monitoring
-      </Typography>
+      <Typography variant="h4" gutterBottom>Live Webcam Monitoring</Typography>
 
-      {/* Stats Cards */}
+      {/* Stats row */}
       <Grid container spacing={2} className={classes.statsCard}>
-        <Grid item xs={12} sm={4}>
-          <Paper className={classes.statsCard} style={{ padding: 16, textAlign: 'center' }}>
-            <Typography variant="h6" color="primary">
-              {stats.totalStreams}
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              Total Streams
-            </Typography>
-          </Paper>
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <Paper className={classes.statsCard} style={{ padding: 16, textAlign: 'center' }}>
-            <Typography variant="h6" color="success.main">
-              {stats.activeStreams}
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              Active Streams
-            </Typography>
-          </Paper>
-        </Grid>
-        <Grid item xs={12} sm={4}>
-          <Paper className={classes.statsCard} style={{ padding: 16, textAlign: 'center' }}>
-            <Typography variant="h6" color="error.main">
-              {stats.disconnectedStreams}
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              Disconnected
-            </Typography>
-          </Paper>
-        </Grid>
+        {[
+          { label: 'Total Sessions', value: stats.total, color: '#1976d2' },
+          { label: 'Active Streams',  value: stats.active, color: '#388e3c' },
+          { label: 'Disconnected',    value: stats.disconnected, color: '#d32f2f' },
+        ].map(({ label, value, color }) => (
+          <Grid item xs={12} sm={4} key={label}>
+            <Paper style={{ padding: 16, textAlign: 'center' }}>
+              <Typography variant="h5" style={{ color }}>{value}</Typography>
+              <Typography variant="body2" color="textSecondary">{label}</Typography>
+            </Paper>
+          </Grid>
+        ))}
       </Grid>
 
-      {/* Controls */}
+      {/* Header + refresh */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h6">
-          Active Test Sessions ({streamList.length})
-        </Typography>
-        <IconButton onClick={handleRefresh} color="primary">
-          <Refresh />
-        </IconButton>
+        <Typography variant="h6">Active Test Sessions ({streamList.length})</Typography>
+        <Tooltip title="Refresh streams">
+          <IconButton onClick={handleRefresh} color="primary"><Refresh /></IconButton>
+        </Tooltip>
       </Box>
 
-      {/* Video Grid */}
+      {/* Stream grid */}
       {streamList.length === 0 ? (
         <Paper className={classes.noStreams}>
           <VideocamOff fontSize="large" />
-          <Typography variant="h6" gutterBottom>
-            No Active Streams
-          </Typography>
-          <Typography variant="body2">
-            Test takers will appear here when they start their exams.
-          </Typography>
+          <Typography variant="h6" gutterBottom style={{ marginTop: 8 }}>No Active Streams</Typography>
+          <Typography variant="body2">Students will appear here when they start their exams.</Typography>
         </Paper>
       ) : (
         <Grid container spacing={2} className={classes.monitorGrid}>
-          {streamList.map(([userId, streamData]) => 
-            renderVideoCard(userId, streamData)
-          )}
+          {streamList.map(([userId, data]) => renderVideoCard(userId, data))}
         </Grid>
       )}
 
-      {/* Fullscreen Modal */}
-      {fullscreenStream && activeStreams[fullscreenStream] && (
-        <Box
-          position="fixed"
-          top={0}
-          left={0}
-          right={0}
-          bottom={0}
-          bgcolor="black"
-          zIndex={9999}
-          display="flex"
-          alignItems="center"
-          justifyContent="center"
-          onClick={() => setFullscreenStream(null)}
-        >
-          <Box position="relative" width="90%" height="90%">
-            <video
-              ref={el => videoRefs.current[fullscreenStream] = el}
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'contain',
-              }}
-              autoPlay
-              muted
-              playsInline
+      {/* Fullscreen overlay */}
+      {fullscreenId && activeStreams[fullscreenId] && (
+        <div className={classes.fullscreenOverlay} onClick={() => setFullscreenId(null)}>
+          <Box position="relative" width="90%" maxWidth="960px">
+            <img
+              ref={fullscreenImgRef}
+              alt="fullscreen-cam"
+              style={{ width: '100%', borderRadius: 8, display: 'block' }}
             />
+            <Typography variant="h6" style={{ color: 'white', textAlign: 'center', marginTop: 8 }}>
+              {activeStreams[fullscreenId]?.userName} — click anywhere to close
+            </Typography>
             <IconButton
-              style={{
-                position: 'absolute',
-                top: 16,
-                right: 16,
-                color: 'white',
-                backgroundColor: 'rgba(0,0,0,0.5)',
-              }}
-              onClick={() => setFullscreenStream(null)}
+              style={{ position: 'absolute', top: 8, right: 8, color: 'white', backgroundColor: 'rgba(0,0,0,0.5)' }}
+              onClick={() => setFullscreenId(null)}
             >
               <FullscreenExit />
             </IconButton>
           </Box>
-        </Box>
+        </div>
       )}
     </div>
   );
