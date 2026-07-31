@@ -27,7 +27,7 @@ function Home(props) {
       }
     }
     getAuthStatus();
-  }, [props.history]);
+  }, [props.history, props.location.state]);
 
   const handleChange = (name) => (event) => {
     setValues({ ...values, error: false, [name]: event.target.value });
