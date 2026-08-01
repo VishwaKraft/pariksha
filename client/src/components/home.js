@@ -62,7 +62,7 @@ function Home(props) {
   const handleGoogleLogin = async (googleData) => {
     try {
       const res = await fetch(
-        process.env.REACT_APP_API_URL + "/v1/auth/google",
+        process.env.REACT_APP_API_URL + "/api/v1/auth/google",
         {
           method: "POST",
           body: JSON.stringify({ token: googleData.tokenId }),

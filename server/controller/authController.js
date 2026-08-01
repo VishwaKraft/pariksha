@@ -17,8 +17,11 @@ const checkToken = (req) => {
 exports.login = (req, res) => {
   if (req.body.email === "pariksha@deloitte.com") {
     if (req.body.password === "advancePass@123") {
-      jwt.sign({ user: "admin" }, process.env.TOKEN_SECRET, { expiresIn: "1d" },
+      jwt.sign({ user: "admin" }, process.env.TOKEN_SECRET || "default_secret", { expiresIn: "1d" },
         async (err, token) => {
+          if (err) {
+            return res.status(500).json(createErrorResponse(errorCodes.INTERNAL_ERROR, "Error generating token", err.message, 500));
+          }
           const responseData = {
             token: token,
             user: { "email": "admin@deloitte.com", "name": "Admin" }
@@ -39,9 +42,12 @@ exports.login = (req, res) => {
         if (user.password === password) {
           jwt.sign(
             { user: user.id },
-            process.env.TOKEN_SECRET,
+            process.env.TOKEN_SECRET || "default_secret",
             { expiresIn: "1d" },
             async (err, token) => {
+              if (err) {
+                return res.status(500).json(createErrorResponse(errorCodes.INTERNAL_ERROR, "Error generating token", err.message, 500));
+              }
               user.password = 'encrypted';
               const responseData = {
                 token: token,
@@ -224,9 +230,12 @@ exports.selectTest = async (req, res) => {
       } else {
         jwt.sign(
           { user: userId, test: id },
-          process.env.TOKEN_SECRET,
+          process.env.TOKEN_SECRET || "default_secret",
           { expiresIn: ttime },
           async (err, token) => {
+            if (err) {
+              return res.status(500).json(createErrorResponse(errorCodes.INTERNAL_ERROR, "Error generating token", err.message, 500));
+            }
             res.json(createSuccessResponse(
               { token },
               "Test selected successfully"

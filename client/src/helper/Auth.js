@@ -57,7 +57,7 @@ export const isAuthenticated = () => {
   if (typeof window == "undefined") {
     return false;
   }
-  if (localStorage.getItem("token")) {
+  if (localStorage.getItem("token") && localStorage.getItem("token") !== "undefined") {
     return localStorage.getItem("token");
   } else {
     localStorage.removeItem("token");
