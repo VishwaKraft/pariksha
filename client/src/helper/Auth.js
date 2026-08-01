@@ -1,5 +1,5 @@
 export const signup = (user) => {
-  return fetch(process.env.REACT_APP_API_URL + `/api/register`, {
+  return fetch(process.env.REACT_APP_API_URL + `/register`, {
     method: "POST",
     headers: {
       Accept: "application/json",
@@ -14,7 +14,7 @@ export const signup = (user) => {
 };
 
 export const signin = (user) => {
-  return fetch(process.env.REACT_APP_API_URL + `/api/login`, {
+  return fetch(process.env.REACT_APP_API_URL + `/login`, {
     method: "POST",
     headers: {
       Accept: "application/json",
@@ -45,7 +45,7 @@ export const signout = (next) => {
     localStorage.removeItem("token");
     next();
 
-    return fetch(process.env.REACT_APP_API_URL + `/api/logout`, {
+    return fetch(process.env.REACT_APP_API_URL + `/logout`, {
       method: "GET",
     })
       .then((response) => console.log("logout success"))
