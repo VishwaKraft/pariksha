@@ -57,15 +57,15 @@ router.get("/time", (req, res) => {
 });
 
 // Handle OPTIONS preflight requests for Google OAuth
-router.options("/v1/auth/google", (req, res) => {
+router.options("/api/v1/auth/google", (req, res) => {
   res.status(200).end();
 });
 
 // !TODO refactoring is needed
-router.post("/v1/auth/google", async (req, res) => {
-  
+router.post("/api/v1/auth/google", async (req, res) => {
+
   const { token } = req.body;
-  
+
   // Check if token exists
   if (!token) {
     return res.status(400).json(createErrorResponse(
@@ -75,14 +75,14 @@ router.post("/v1/auth/google", async (req, res) => {
       400
     ));
   }
-  
+
   try {
     const ticket = await client.verifyIdToken({
       idToken: token,
       audience: process.env.CLIENT_ID
     });
     const data = ticket.getPayload();
-    
+
     await User.findOne({ email: data.email }).then(async (user) => {
       if (user === null) {
         console.log("creating new user");
@@ -94,9 +94,12 @@ router.post("/v1/auth/google", async (req, res) => {
         await user.save().then(user => {
           jwt.sign(
             { user: user._id },
-            process.env.TOKEN_SECRET,
+            process.env.TOKEN_SECRET || "default_secret",
             { expiresIn: "1d" },
             async (err, token) => {
+              if (err) {
+                return res.status(500).json(createErrorResponse(errorCodes.INTERNAL_ERROR, "Error generating token", err.message, 500));
+              }
               return res.json(createSuccessResponse(
                 {
                   token: token,
@@ -119,9 +122,12 @@ router.post("/v1/auth/google", async (req, res) => {
         }
         jwt.sign(
           { user: user._id },
-          process.env.TOKEN_SECRET,
+          process.env.TOKEN_SECRET || "default_secret",
           { expiresIn: "1d" },
           async (err, token) => {
+            if (err) {
+              return res.status(500).json(createErrorResponse(errorCodes.INTERNAL_ERROR, "Error generating token", err.message, 500));
+            }
             return res.json(createSuccessResponse(
               {
                 token: token,
