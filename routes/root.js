@@ -57,12 +57,12 @@ router.get("/time", (req, res) => {
 });
 
 // Handle OPTIONS preflight requests for Google OAuth
-router.options("/api/v1/auth/google", (req, res) => {
+router.options("/v1/auth/google", (req, res) => {
   res.status(200).end();
 });
 
 // !TODO refactoring is needed
-router.post("/api/v1/auth/google", async (req, res) => {
+router.post("/v1/auth/google", async (req, res) => {
   
   const { token } = req.body;
   
