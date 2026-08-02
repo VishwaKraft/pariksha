@@ -61,7 +61,8 @@ export default function BasicTextFields() {
         selectedMandatoryCategory: [],
         selectedOptionalCategory: [],
         startTime: "2021-1-1T12:00",
-        endTime: "2021-1-1T12:00"
+        endTime: "2021-1-1T12:00",
+        duration: ""
     });
 
 
@@ -85,7 +86,7 @@ export default function BasicTextFields() {
         setState({ ...state, endTime: event.target.value });
     };
 
-    const { title, description, category, selectedMandatoryCategory, selectedOptionalCategory, startTime, endTime, selectedFile } = state;
+    const { title, description, category, selectedMandatoryCategory, selectedOptionalCategory, startTime, endTime, duration, selectedFile } = state;
     const theme = useTheme();
     const handleSubmit = () => {
         let formData = new FormData();
@@ -94,6 +95,7 @@ export default function BasicTextFields() {
         formData.append('description', description);
         formData.append('startTime', (new Date(startTime)).getTime());
         formData.append('endTime', (new Date(endTime)).getTime());
+        formData.append('duration', duration || 0);
         selectedMandatoryCategory.forEach(item => formData.append('mandatoryCategory', item))
         selectedOptionalCategory.forEach(item => formData.append('optionalCategory', item))
         addTest(formData)
@@ -245,6 +247,19 @@ export default function BasicTextFields() {
                                 shrink: true,
                             }}
                             fullWidth
+                        />
+                    </FormControl>
+                    <FormControl className={classes.formControl}>
+                        <TextField
+                            id="outlined-duration"
+                            label="Duration (in minutes)"
+                            placeholder="Leave empty or 0 to use Start/End time difference"
+                            fullWidth
+                            type="number"
+                            value={duration}
+                            name="duration"
+                            onChange={handleChange}
+                            margin="normal"
                         />
                     </FormControl>
                     <FormControl className={classes.formControl} gutterbottom="true">

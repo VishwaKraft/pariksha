@@ -27,6 +27,7 @@ export default function BasicTextFields() {
         columns={[
           { title: 'Title', field: 'title' },
           { title: 'Description', field: 'description' },
+          { title: 'Duration (mins)', field: 'duration', type: 'numeric' },
           { title: 'Mandatory Category', field: 'mandatoryCategory', editable: 'never' },
           { title: 'Optional Category', field: 'optionalCategory', editable: 'never' },
           { 

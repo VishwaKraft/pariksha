@@ -195,9 +195,33 @@ exports.checkEndTime = (req, res, next) => {
   })
 };
 
-exports.remainingTime = (req, res, next) => {
+exports.remainingTime = async (req, res, next) => {
   var testStartTime = Date.now();
-  var diff = Math.floor((req.testDetails.endTime - testStartTime) / 1000);
+  
+  // Calculate max time based on test window (endTime)
+  var maxTimeByWindow = req.testDetails.endTime - testStartTime;
+  
+  // Try to find if user already started the test
+  let timeRemaining = maxTimeByWindow;
+  
+  if (req.testDetails.duration && req.testDetails.duration > 0 && req.user) {
+    try {
+      const response = await Response.findOne({ userId: req.user, testId: req.testDetails._id });
+      if (response && response.createdAt) {
+        const maxTimeByDuration = (new Date(response.createdAt).getTime()) + (req.testDetails.duration * 60000) - testStartTime;
+        timeRemaining = Math.min(maxTimeByWindow, maxTimeByDuration);
+      } else {
+        // Not started yet, will get full duration initially
+        timeRemaining = Math.min(maxTimeByWindow, req.testDetails.duration * 60000);
+      }
+    } catch (err) {
+      console.log("Error finding response for duration check", err);
+    }
+  }
+
+  if (timeRemaining < 0) timeRemaining = 0;
+
+  var diff = Math.floor(timeRemaining / 1000);
   var days = Math.floor(diff / 86400);
   diff = diff - days * 86400;
   var hours = Math.floor(diff / (60 * 60));
