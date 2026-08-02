@@ -99,8 +99,9 @@ const WebcamMonitor = () => {
   useEffect(() => {
     const token = isAuthenticated();
 
-    socketRef.current = io(process.env.REACT_APP_API_URL || 'http://localhost:3000', {
-      transports: ['websocket'],
+    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3000';
+    console.log('Connecting to monitoring server at:', apiUrl);
+    socketRef.current = io(apiUrl, {
       auth: { token }, // ← send admin JWT so server can authenticate
     });
 
@@ -114,7 +115,7 @@ const WebcamMonitor = () => {
 
     socketRef.current.on('connect_error', (err) => {
       console.error('Monitoring connection error:', err.message);
-      setError('Failed to connect to monitoring server: ' + err.message);
+      setError(`Failed to connect to ${apiUrl}: ${err.message}`);
       setLoading(false);
     });
 

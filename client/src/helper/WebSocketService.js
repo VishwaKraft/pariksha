@@ -17,8 +17,9 @@ class WebSocketService {
     }
 
     return new Promise((resolve, reject) => {
-      this.socket = io(process.env.REACT_APP_API_URL || 'http://localhost:3000', {
-        transports: ['websocket'],
+      const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3000';
+      console.log('Connecting WebSocket to:', apiUrl);
+      this.socket = io(apiUrl, {
         auth: { token },
       });
 
