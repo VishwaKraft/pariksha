@@ -100,8 +100,10 @@ const WebcamMonitor = () => {
     const token = isAuthenticated();
 
     const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3000';
-    console.log('Connecting to monitoring server at:', apiUrl);
-    socketRef.current = io(apiUrl, {
+    // If the API URL ends with /api, strip it out to connect to the root namespace
+    const socketUrl = apiUrl.endsWith('/api') ? apiUrl.slice(0, -4) : apiUrl;
+    console.log('Connecting to monitoring server at:', socketUrl);
+    socketRef.current = io(socketUrl, {
       auth: { token }, // ← send admin JWT so server can authenticate
     });
 
