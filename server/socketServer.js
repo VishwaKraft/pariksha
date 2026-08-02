@@ -7,12 +7,8 @@ class SocketServer {
   constructor(server) {
     this.io = new Server(server, {
       cors: {
-        // Allow both port 3000 and 3001 for local dev
-        origin: [
-          process.env.CLIENT_URL || 'http://localhost:3001',
-          'http://localhost:3000',
-          'http://localhost:3001',
-        ],
+        // Automatically reflect the request origin to allow cross-origin connections
+        origin: true,
         methods: ['GET', 'POST'],
         credentials: true,
       },
