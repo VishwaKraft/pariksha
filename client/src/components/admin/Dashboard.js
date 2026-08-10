@@ -105,15 +105,15 @@ function Dashboard(props) {
     setOpen(false);
   };
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("name");
-    localStorage.removeItem("email");
+    localStorage.removeItem("admin-token");
+    localStorage.removeItem("admin-name");
+    localStorage.removeItem("admin-email");
     props.history.push('/admin');
   };
 
   useEffect(() => {
     async function checkToken() {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("admin-token");
       if (!token) {
         props.history.push('/admin');
       } 

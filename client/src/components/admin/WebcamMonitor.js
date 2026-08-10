@@ -6,7 +6,7 @@ import {
 import { VideocamOff, Person, Refresh, Fullscreen, FullscreenExit } from '@material-ui/icons';
 import { makeStyles } from '@material-ui/core/styles';
 import io from 'socket.io-client';
-import { isAuthenticated } from '../../helper/Auth';
+import { isAuthenticatedAdmin } from '../../helper/Auth';
 
 const useStyles = makeStyles((theme) => ({
   root: { padding: theme.spacing(2) },
@@ -97,7 +97,7 @@ const WebcamMonitor = () => {
   const fullscreenImgRef = useRef(null);
 
   useEffect(() => {
-    const token = isAuthenticated();
+    const token = isAuthenticatedAdmin();
 
     const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3000';
     // If the API URL ends with /api, strip it out to connect to the root namespace

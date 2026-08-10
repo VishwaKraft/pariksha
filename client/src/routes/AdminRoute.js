@@ -1,14 +1,14 @@
 import React from "react";
 import { Route, Redirect } from "react-router-dom";
 import Dashboard from "../components/admin/Dashboard";
-import { isAuthenticated } from "../helper/Auth";
+import { isAuthenticatedAdmin } from "../helper/Auth";
 
 const AdminRoute = ({ component: Component, ...rest }) => {
   return (
     <Route
       {...rest}
       render={(props) =>
-        isAuthenticated() ? (
+        isAuthenticatedAdmin() ? (
             <Dashboard>
                <Component {...props} />
             </Dashboard>

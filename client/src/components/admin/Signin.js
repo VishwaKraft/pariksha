@@ -11,7 +11,7 @@ import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles } from '@material-ui/core/styles';
 import { CircularProgress } from '@material-ui/core';
-import { authenticate, signin } from '../../helper/Auth';
+import { authenticateAdmin, signin } from '../../helper/Auth';
 import { withRouter } from "react-router-dom";
 
 const useStyles = makeStyles((theme) => ({
@@ -70,7 +70,7 @@ function SignInSide(props) {
             setValues({ ...values, error: data.error.message, loading: false });
             alert(data.error.message);
           } else {
-            authenticate(data.data,()=>{
+            authenticateAdmin(data.data,()=>{
               props.history.push('/admin/main');
             });
           }
