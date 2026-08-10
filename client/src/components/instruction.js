@@ -3,7 +3,7 @@ import NavBar from "./nav";
 import React, { useState, useEffect, useCallback } from "react";
 import { Redirect, withRouter, useParams } from "react-router-dom";
 import { isAuthenticated } from "../helper/Auth";
-import { getQuestions, getTestToken } from "../helper/Test";
+import { getQuestions, getTestToken, selectTest } from "../helper/Test";
 import Webcam from "react-webcam";
 import webSocketService from "../helper/WebSocketService";
 import CameraTest from "./CameraTest";
@@ -24,24 +24,19 @@ const useStyles = makeStyles((theme) => ({
 
 
 const Instruction = () => {
+  const [testLoaded, setTestLoaded] = useState(false);
   const [values, setValues] = useState({
-    hour: JSON.parse(localStorage.getItem("test")).duration.hour ? JSON.parse(localStorage.getItem("test")).duration.hour : 0,
-    minute: JSON.parse(localStorage.getItem("test")).duration.minute ? JSON.parse(localStorage.getItem("test")).duration.minute : 0,
-    second: JSON.parse(localStorage.getItem("test")).duration.second ? JSON.parse(localStorage.getItem("test")).duration.second : 0,
-    optional: JSON.parse(localStorage.getItem("test")).optionalCategory.length > 0 ? JSON.parse(localStorage.getItem("test")).optionalCategory : [],
-    mandatory: JSON.parse(localStorage.getItem("test")).mandatoryCategory ? JSON.parse(localStorage.getItem("test")).mandatoryCategory : [],
-    startTime: (new Date(JSON.parse(localStorage.getItem("test")).startTime)).toLocaleString(navigator.language || navigator.languages[0], {
-      day: 'numeric', // numeric, 2-digit
-      year: 'numeric', // numeric, 2-digit
-      month: 'short', // numeric, 2-digit, long, short, narrow
-      hour: 'numeric', // numeric, 2-digit
-      minute: 'numeric', // numeric, 2-digit
-    }),
+    hour: 0,
+    minute: 0,
+    second: 0,
+    optional: [],
+    mandatory: [],
+    startTime: "",
     didRedirect: false,
     loading: false,
     isCameraOne: false,
     error: "",
-    lang: JSON.parse(localStorage.getItem("test")).optionalCategory.length > 0 ? JSON.parse(localStorage.getItem("test")).optionalCategory[0] : null,
+    lang: null,
     showCameraTest: false,
   });
 
@@ -63,6 +58,46 @@ const Instruction = () => {
   const token = isAuthenticated();
 
   const { id } = useParams();
+
+  useEffect(() => {
+    let testObj = null;
+    try {
+      testObj = JSON.parse(localStorage.getItem("test"));
+    } catch (e) {}
+
+    const initializeTest = (testData) => {
+      localStorage.setItem("test", JSON.stringify(testData));
+      setValues(prev => ({
+        ...prev,
+        hour: testData.duration && testData.duration.hour ? testData.duration.hour : 0,
+        minute: testData.duration && testData.duration.minute ? testData.duration.minute : 0,
+        second: testData.duration && testData.duration.second ? testData.duration.second : 0,
+        optional: testData.optionalCategory && testData.optionalCategory.length > 0 ? testData.optionalCategory : [],
+        mandatory: testData.mandatoryCategory ? testData.mandatoryCategory : [],
+        startTime: testData.startTime ? (new Date(testData.startTime)).toLocaleString(navigator.language || navigator.languages[0], {
+          day: 'numeric', year: 'numeric', month: 'short', hour: 'numeric', minute: 'numeric'
+        }) : "",
+        lang: testData.optionalCategory && testData.optionalCategory.length > 0 ? testData.optionalCategory[0] : null,
+      }));
+      setTestLoaded(true);
+    };
+
+    if (testObj && testObj._id === id) {
+      initializeTest(testObj);
+    } else {
+      selectTest(id).then(res => {
+        if (res && res.data) {
+          initializeTest(res.data);
+        } else {
+          setValues(prev => ({ ...prev, error: "Failed to load test details" }));
+          setTestLoaded(true);
+        }
+      }).catch(err => {
+        setValues(prev => ({ ...prev, error: "Failed to load test details" }));
+        setTestLoaded(true);
+      });
+    }
+  }, [id]);
 
   const handleRedirect = async (event) => {
     if (isCameraOne === false) {
@@ -368,7 +403,13 @@ const Instruction = () => {
 
   return (
     <>
-      {information()}
+      {!testLoaded ? (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+          <CircularProgress />
+        </div>
+      ) : (
+        information()
+      )}
       {performRedirect()}
     </>
   );

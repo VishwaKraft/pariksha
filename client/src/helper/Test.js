@@ -143,9 +143,10 @@ export const selectTest = async (id) => {
       },
     }
   )
-    .then((response) => {
+    .then(async (response) => {
       console.log(response)
-      return { ...response.json(), status: response.status };
+      const data = await response.json();
+      return { ...data, status: response.status };
     })
     .catch((err) => err);
 };
