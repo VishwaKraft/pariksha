@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogContentText, TextField, DialogActions, Button } from '@material-ui/core';
 import MaterialTable from 'material-table';
-import { deleteTest, getTests, updateTest } from '../../../helper/admin';
+import { deleteTest, getTests, updateTest, getQuestions } from '../../../helper/admin';
 import { toast } from 'react-toastify';
 
 export default function BasicTextFields() {
@@ -14,6 +14,20 @@ export default function BasicTextFields() {
   const handleShareClick = async () => {
     if (shareEmail) {
       try {
+        let totalQ = "N/A";
+        if (currentTestDetails) {
+          try {
+            const qRes = await getQuestions(1, 10000);
+            if (qRes && qRes.results) {
+               const allCats = [...(currentTestDetails.mandatoryCategory || []), ...(currentTestDetails.optionalCategory || [])];
+               const filtered = qRes.results.filter(q => allCats.includes(q.category));
+               totalQ = filtered.length.toString();
+            }
+          } catch(e) {
+            console.log("Failed to fetch questions for count", e);
+          }
+        }
+
         const response = await fetch(`${process.env.REACT_APP_EMAIL_API_URL}/api/email-events/trigger/pariksha-invite`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -24,7 +38,7 @@ export default function BasicTextFields() {
               testName: currentTestDetails ? currentTestDetails.title : "",
               startTime: currentTestDetails && currentTestDetails.startTime ? new Date(currentTestDetails.startTime).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : "",
               duration: currentTestDetails && currentTestDetails.duration ? currentTestDetails.duration.toString() + " mins" : "",
-              totalQuestions: "N/A",
+              totalQuestions: totalQ,
               testLink: currentShareLink
             }
           })
@@ -51,7 +65,29 @@ export default function BasicTextFields() {
         columns={[
           { title: 'Title', field: 'title' },
           { title: 'Description', field: 'description' },
-          { title: 'Duration (mins)', field: 'duration', type: 'numeric' },
+          { 
+            title: 'Duration (mins)', 
+            field: 'duration', 
+            type: 'numeric',
+            render: rowData => {
+              if (typeof rowData.duration === 'object' && rowData.duration !== null) {
+                return rowData.duration.hour * 60 + rowData.duration.minute;
+              }
+              return rowData.duration;
+            },
+            editComponent: props => {
+              const val = typeof props.value === 'object' && props.value !== null 
+                ? (props.value.hour * 60 + props.value.minute) 
+                : props.value;
+              return (
+                <TextField
+                  type="number"
+                  value={val || ''}
+                  onChange={e => props.onChange(e.target.value)}
+                />
+              );
+            }
+          },
           { title: 'Mandatory Category', field: 'mandatoryCategory', editable: 'never' },
           { title: 'Optional Category', field: 'optionalCategory', editable: 'never' },
           { 
@@ -144,17 +180,27 @@ export default function BasicTextFields() {
         editable={{
           onRowUpdate: (newData, oldData) =>
             new Promise((resolve, reject) => {
-              setTimeout(() => {
-                updateTest(oldData._id, newData)
+              updateTest(oldData._id, newData).then(() => {
+                if (tableRef.current) {
+                  tableRef.current.onQueryChange();
+                }
                 resolve();
-              }, 1000)
+              }).catch(err => {
+                console.error(err);
+                resolve();
+              });
             }),
           onRowDelete: oldData =>
             new Promise((resolve, reject) => {
-              setTimeout(() => {
-                deleteTest(oldData._id)
+              deleteTest(oldData._id).then(() => {
+                if (tableRef.current) {
+                  tableRef.current.onQueryChange();
+                }
                 resolve();
-              }, 1000)
+              }).catch(err => {
+                console.error(err);
+                resolve();
+              });
             }),
         }}
         options={{
