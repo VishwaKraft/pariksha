@@ -121,8 +121,10 @@ export default function BasicTextFields() {
         ]}
         data={query =>
           new Promise((resolve, reject) => {
+            console.log("MaterialTable fetching data for page", query.page);
             getTests((query.page + 1), query.pageSize)
               .then(result => {
+                console.log("MaterialTable fetched data:", result.data.results);
                 resolve({
                   data: result.data.results.map(item => {
                     return { ...item }
@@ -131,6 +133,10 @@ export default function BasicTextFields() {
                   totalCount: result.total,
                 })
               })
+              .catch(err => {
+                console.error("Error fetching data:", err);
+                reject(err);
+              });
           })}
         actions={[
           {
@@ -158,13 +164,20 @@ export default function BasicTextFields() {
         editable={{
           onRowUpdate: (newData, oldData) =>
             new Promise((resolve, reject) => {
-              updateTest(oldData._id, { ...newData }).then(() => {
+              console.log("onRowUpdate triggered!");
+              console.log("oldData:", oldData);
+              console.log("newData:", newData);
+              const payload = { ...newData };
+              console.log("Payload sent to updateTest:", payload);
+              updateTest(oldData._id, payload).then((res) => {
+                console.log("updateTest response:", res);
                 if (tableRef.current) {
+                  console.log("Triggering onQueryChange to refresh table...");
                   tableRef.current.onQueryChange();
                 }
                 resolve();
               }).catch(err => {
-                console.error(err);
+                console.error("Error updating test:", err);
                 resolve();
               });
             }),
