@@ -65,7 +65,29 @@ export default function BasicTextFields() {
         columns={[
           { title: 'Title', field: 'title' },
           { title: 'Description', field: 'description' },
-          { title: 'Duration (mins)', field: 'duration', type: 'numeric' },
+          { 
+            title: 'Duration (mins)', 
+            field: 'duration', 
+            type: 'numeric',
+            render: rowData => {
+              if (typeof rowData.duration === 'object' && rowData.duration !== null) {
+                return (rowData.duration.hour || 0) * 60 + (rowData.duration.minute || 0);
+              }
+              return rowData.duration || 0;
+            },
+            editComponent: props => {
+              const val = typeof props.value === 'object' && props.value !== null 
+                ? ((props.value.hour || 0) * 60 + (props.value.minute || 0)) 
+                : props.value;
+              return (
+                <TextField
+                  type="number"
+                  value={val || ''}
+                  onChange={e => props.onChange(e.target.value ? Number(e.target.value) : 0)}
+                />
+              );
+            }
+          },
           { title: 'Mandatory Category', field: 'mandatoryCategory', editable: 'never' },
           { title: 'Optional Category', field: 'optionalCategory', editable: 'never' },
           { 
