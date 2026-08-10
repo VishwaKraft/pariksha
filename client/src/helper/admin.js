@@ -211,7 +211,7 @@ export const addTest = (test) => {
     .catch((err) => err);
 };
 
-export const getTests = (page, limit) => {
+export const getTests = (page = 1, limit = 10) => {
   const token = isAuthenticatedAdmin();
   return fetch(
     process.env.REACT_APP_API_URL + `/admin/tests?page=` + page + "&limit=" + limit,

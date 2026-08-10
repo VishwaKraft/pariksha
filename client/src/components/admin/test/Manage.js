@@ -144,15 +144,15 @@ export default function BasicTextFields() {
         data={query =>
           new Promise((resolve, reject) => {
             console.log("MaterialTable fetching data for page", query.page);
-            getTests((query.page + 1), query.pageSize)
+            getTests((query.page + 1) || 1, query.pageSize || 10)
               .then(result => {
                 console.log("MaterialTable fetched data:", result.data.results);
                 resolve({
-                  data: result.data.results.map(item => {
+                  data: result.data.results ? result.data.results.map(item => {
                     return { ...item }
-                  }),
-                  page: result.page - 1,
-                  totalCount: result.total,
+                  }) : [],
+                  page: result.page ? result.page - 1 : 0,
+                  totalCount: result.total || (result.data.results ? result.data.results.length : 0),
                 })
               })
               .catch(err => {
