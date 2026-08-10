@@ -10,7 +10,7 @@ exports.addTest = async (req, res) => {
   {
     testUrl = req.file.location
   }
-  const { startTime, endTime, title, mandatoryCategory, optionalCategory, description } = req.body;
+  const { startTime, endTime, title, mandatoryCategory, optionalCategory, description, duration } = req.body;
   if (endTime - startTime >= 86400000 || endTime <= startTime) {
     return res.status(422).json(createErrorResponse(
       errorCodes.VALIDATION_ERROR,
@@ -20,7 +20,7 @@ exports.addTest = async (req, res) => {
     ));
   }
   try {
-    var test = { startTime, endTime, title, mandatoryCategory, optionalCategory, description, testUrl }
+    var test = { startTime, endTime, title, mandatoryCategory, optionalCategory, description, testUrl, duration: duration ? parseInt(duration) : 0 }
     // var d = new Date(test.startTime);
     // var c = d.getTime()
     // var st = (test.startTime.getTime());
@@ -73,7 +73,7 @@ exports.getTest = async (req, res, next) => {
             endTime: (result.endTime),
             createdAt: getISTfromUTC(result.createdAt),
             updatedAt: getISTfromUTC(result.updatedAt),
-            duration: getDurationFromTime(result.startTime, result.endTime)
+            duration: result.duration > 0 ? { hour: Math.floor(result.duration / 60), minute: result.duration % 60, second: 0 } : getDurationFromTime(result.startTime, result.endTime)
           }
         })
         .then(result => {
@@ -97,7 +97,7 @@ exports.getTest = async (req, res, next) => {
             endTime: (item.endTime),
             createdAt: getISTfromUTC(item.createdAt),
             updatedAt: getISTfromUTC(item.updatedAt),
-            duration: getDurationFromTime(item.startTime, item.endTime)
+            duration: item.duration > 0 ? { hour: Math.floor(item.duration / 60), minute: item.duration % 60, second: 0 } : getDurationFromTime(item.startTime, item.endTime)
           }
         }))
       res.status(200).json(createSuccessResponse(

@@ -1,6 +1,7 @@
 import React from "react";
 import PropTypes from "prop-types";
 import DashboardIcon from "@material-ui/icons/Dashboard";
+import VideocamIcon from "@material-ui/icons/Videocam";
 import List from "@material-ui/core/List";
 import ListItem from "@material-ui/core/ListItem";
 import ListItemIcon from "@material-ui/core/ListItemIcon";
@@ -37,6 +38,11 @@ function getItems() {
       id: 2,
       title: "User",
       link: "/admin/user",
+    },
+    {
+      id: 7,
+      title: "Webcam Monitor",
+      link: "/admin/webcam",
     },
     {
       id: 3,
@@ -146,7 +152,7 @@ class NestedList extends React.Component {
                       onClick={this.handleClick.bind(this, item.title)}
                     >
                       <ListItemIcon>
-                        <DashboardIcon />
+                        {item.title === "Webcam Monitor" ? <VideocamIcon /> : <DashboardIcon />}
                       </ListItemIcon>
                       <ListItemText primary={item.title} />
                       {item.items != null ? (

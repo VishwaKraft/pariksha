@@ -1,10 +1,12 @@
 import CircularProgress from "@material-ui/core/CircularProgress";
 import NavBar from "./nav";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Redirect, withRouter, useParams } from "react-router-dom";
 import { isAuthenticated } from "../helper/Auth";
 import { getQuestions, getTestToken } from "../helper/Test";
 import Webcam from "react-webcam";
+import webSocketService from "../helper/WebSocketService";
+import CameraTest from "./CameraTest";
 import { Box, Button, Container, FormControl, Grid, InputLabel, makeStyles, MenuItem, Paper, Select } from "@material-ui/core";
 
 const useStyles = makeStyles((theme) => ({
@@ -40,6 +42,7 @@ const Instruction = () => {
     isCameraOne: false,
     error: "",
     lang: JSON.parse(localStorage.getItem("test")).optionalCategory.length > 0 ? JSON.parse(localStorage.getItem("test")).optionalCategory[0] : null,
+    showCameraTest: false,
   });
 
   const {
@@ -54,6 +57,7 @@ const Instruction = () => {
     startTime,
     error,
     lang,
+    showCameraTest,
   } = values;
 
   const token = isAuthenticated();
@@ -62,7 +66,7 @@ const Instruction = () => {
 
   const handleRedirect = async (event) => {
     if (isCameraOne === false) {
-      setValues({ ...values, error: "Please Turn On Camera!" });
+      setValues({ ...values, error: "Please Turn On Camera!", showCameraTest: true });
       document.getElementById("errorText").classList.add("d-block");
     } else {
       setValues({ ...values, error: false, loading: true });
@@ -124,28 +128,79 @@ const Instruction = () => {
     }));
   };
 
+  const initializeWebcam = useCallback(async () => {
+    try {
+      // Step 1: Verify camera access first (independent of WebSocket)
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Camera access not supported in this browser');
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 15, max: 30 } },
+        audio: false
+      });
+
+      // Camera is confirmed working — mark it on immediately
+      setValues(prev => ({
+        ...prev,
+        isCameraOne: true,
+        error: "",
+      }));
+
+      // Stop this probe stream (Webcam component manages its own stream)
+      stream.getTracks().forEach(track => track.stop());
+
+      // Step 2: Try WebSocket (non-blocking — failure won't prevent test start)
+      try {
+        const token = isAuthenticated();
+        if (token) {
+          await webSocketService.connect(token);
+          await webSocketService.startVideoStreaming();
+          const testObj = JSON.parse(localStorage.getItem("test")) || {};
+          webSocketService.sendStreamUpdate({
+            testId: id,
+            testName: testObj.title || 'Unknown Test',
+            status: 'preparing',
+            stage: 'instructions'
+          });
+        }
+      } catch (wsError) {
+        // WebSocket failure is non-fatal — camera is still confirmed on
+        console.warn("WebSocket streaming unavailable (non-fatal):", wsError.message);
+      }
+
+    } catch (error) {
+      console.error("Webcam initialization error:", error);
+      let errorMessage = "Camera access denied or not available";
+
+      if (error.name === 'NotAllowedError' || error.message.includes('Camera access denied')) {
+        errorMessage = "Camera access denied. Please allow camera permissions and refresh the page.";
+      } else if (error.name === 'NotFoundError' || error.message.includes('No camera found')) {
+        errorMessage = "No camera found. Please connect a camera and try again.";
+      } else if (error.name === 'NotReadableError' || error.message.includes('already in use')) {
+        errorMessage = "Camera is already in use by another application. Please close other apps using the camera.";
+      } else if (error.message.includes('not supported')) {
+        errorMessage = "Camera access not supported in this browser. Please use Chrome or Firefox.";
+      }
+
+      setValues(prev => ({
+        ...prev,
+        error: errorMessage,
+        isCameraOne: false,
+      }));
+    }
+  }, [id]);
+
   useEffect(() => {
-    navigator.mediaDevices
-      .getUserMedia({
-        video: {
-          height: 200,
-          width: 300,
-        },
-        audio: false,
-      })
-      .then((stream) => {
-        setValues((values) => ({
-          ...values,
-          isCameraOne: true,
-        }));
-        document.getElementById("cam").srcObject = stream;
-      })
-      .catch((err) => console.log("Error But Y?" + err));
+    initializeWebcam();
+
     return function cleanup() {
-      localStorage.removeItem("optional")
-      localStorage.removeItem("mandatoryCategory")
+      // Stop video streaming but don't disconnect — questions.js will reconnect
+      webSocketService.stopVideoStreaming();
+      localStorage.removeItem("optional");
+      localStorage.removeItem("mandatoryCategory");
     };
-  }, []);
+  }, [id, initializeWebcam]);
 
   const classes = useStyles();
 
@@ -226,7 +281,7 @@ const Instruction = () => {
                   </div>
                   <div className="row">
                     <div className="col-12">
-                      <Webcam id="cam" style={{ width: "inherit" }} />
+                      <Webcam id="cam" style={{ width: "100%", maxWidth: "320px", height: "240px", margin: "0 auto", display: "block" }} />
                     </div>
                   </div>
                   <div className="row">
@@ -284,6 +339,23 @@ const Instruction = () => {
                       </div>
                     </div>
                   </div>
+                  {showCameraTest && (
+                    <div className="row" style={{ marginTop: "20px" }}>
+                      <div className="col-md-12">
+                        <CameraTest
+                          onCameraReady={() => {
+                            setValues(prev => ({ ...prev, showCameraTest: false, error: "" }));
+                            document.getElementById("errorText").classList.remove("d-block");
+                            // Retry camera initialization
+                            initializeWebcam();
+                          }}
+                          onError={(errorMsg) => {
+                            setValues(prev => ({ ...prev, error: errorMsg }));
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </Paper>
               </Grid>
             </Grid>

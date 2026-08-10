@@ -35,6 +35,7 @@ jobs:
         env:
           REACT_APP_API_URL: ${{ secrets.REACT_APP_API_URL }}
           REACT_APP_GOOGLE_CLIENT_ID: ${{ secrets.REACT_APP_GOOGLE_CLIENT_ID }}
+          REACT_APP_EMAIL_API_URL: ${{ secrets.REACT_APP_EMAIL_API_URL }}
 
       - name: 404 page
         run: cp ./build/index.html ./build/404.html

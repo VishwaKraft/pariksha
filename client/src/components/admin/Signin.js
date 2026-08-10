@@ -11,7 +11,7 @@ import LockOutlinedIcon from '@material-ui/icons/LockOutlined';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles } from '@material-ui/core/styles';
 import { CircularProgress } from '@material-ui/core';
-import { authenticate, signin } from '../../helper/Auth';
+import { authenticateAdmin, signin } from '../../helper/Auth';
 import { withRouter } from "react-router-dom";
 
 const useStyles = makeStyles((theme) => ({
@@ -19,7 +19,7 @@ const useStyles = makeStyles((theme) => ({
     height: '100vh',
   },
   image: {
-    backgroundImage: 'url(https://source.unsplash.com/random)',
+    backgroundImage: 'url(https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2071&q=80)',
     backgroundRepeat: 'no-repeat',
     backgroundColor:
       theme.palette.type === 'light' ? theme.palette.grey[50] : theme.palette.grey[900],
@@ -55,7 +55,7 @@ function SignInSide(props) {
     didRedirect: false,
   });
 
-  const { email, password, error, loading } = values;
+  const { email, password, loading } = values;
 
   const handleChange = (name) => (event) => {
     setValues({ ...values, error: false, [name]: event.target.value });
@@ -70,8 +70,8 @@ function SignInSide(props) {
             setValues({ ...values, error: data.error.message, loading: false });
             alert(data.error.message);
           } else {
-            authenticate(data.data,()=>{
-              props.history.push('../admin/main');
+            authenticateAdmin(data.data,()=>{
+              props.history.push('/admin/main');
             });
           }
         })
@@ -147,7 +147,7 @@ function SignInSide(props) {
                 <Typography variant="body2" color="textSecondary" align="center">
                     {'Copyright © '}
                     <Link color="inherit" href={process.env.PUBLIC_URL}>
-                    Your Website
+                    Pariksha
                     </Link>{' '}
                     {new Date().getFullYear()}
                     {'.'}

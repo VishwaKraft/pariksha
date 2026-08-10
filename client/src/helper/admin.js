@@ -1,7 +1,7 @@
-import { isAuthenticated } from "./Auth";
+import { isAuthenticatedAdmin } from "./Auth";
 
 export const getCount = () => {
-  const token = isAuthenticated();
+  const token = isAuthenticatedAdmin();
   return fetch(
     process.env.REACT_APP_API_URL + `/admin/count`,
     {
@@ -20,7 +20,7 @@ export const getCount = () => {
 };
 
 export const getUsers = (page, limit, search) => {
-  const token = isAuthenticated();
+  const token = isAuthenticatedAdmin();
   return fetch(
     process.env.REACT_APP_API_URL + `/admin/users?page=` + page + "&limit=" + limit + (search ? "&search=" + search : ""),
     {
@@ -39,7 +39,7 @@ export const getUsers = (page, limit, search) => {
 };
 
 export const getResponse = (page, limit, search) => {
-  const token = isAuthenticated();
+  const token = isAuthenticatedAdmin();
   return fetch(
     process.env.REACT_APP_API_URL + `/admin/responses?page=` + page + "&limit=" + limit + (search ? "&search=" + search : ""),
     {
@@ -58,7 +58,7 @@ export const getResponse = (page, limit, search) => {
 };
 
 export const deleteResponse = (id, user) => {
-  const token = isAuthenticated();
+  const token = isAuthenticatedAdmin();
   return fetch(
     process.env.REACT_APP_API_URL + `/admin/response/${id}`,
     {
@@ -77,7 +77,7 @@ export const deleteResponse = (id, user) => {
     .catch((err) => err);
 };
 export const updateUser = (id, user) => {
-  const token = isAuthenticated();
+  const token = isAuthenticatedAdmin();
   return fetch(
     process.env.REACT_APP_API_URL + `/admin/user/${id}`,
     {
@@ -97,7 +97,7 @@ export const updateUser = (id, user) => {
 };
 
 export const deleteUser = (id) => {
-  const token = isAuthenticated();
+  const token = isAuthenticatedAdmin();
   return fetch(
     process.env.REACT_APP_API_URL + `/admin/user/${id}`,
     {
@@ -116,7 +116,7 @@ export const deleteUser = (id) => {
 };
 
 export const addQuestion = (question) => {
-  const token = isAuthenticated();
+  const token = isAuthenticatedAdmin();
   return fetch(
     process.env.REACT_APP_API_URL + `/admin/add-question`,
     {
@@ -135,7 +135,7 @@ export const addQuestion = (question) => {
 };
 
 export const addQuestions = (formData) => {
-  const token = isAuthenticated();
+  const token = isAuthenticatedAdmin();
   return fetch(
     process.env.REACT_APP_API_URL + `/admin/upload-questions`,
     {
@@ -155,7 +155,7 @@ export const addQuestions = (formData) => {
 
 
 export const getQuestions = (page, limit) => {
-  const token = isAuthenticated();
+  const token = isAuthenticatedAdmin();
   return fetch(
     process.env.REACT_APP_API_URL + `/admin/questions?page=` + page + "&limit=" + limit,
     {
@@ -174,7 +174,7 @@ export const getQuestions = (page, limit) => {
 };
 
 export const getCategory = () => {
-  const token = isAuthenticated();
+  const token = isAuthenticatedAdmin();
   return fetch(
     process.env.REACT_APP_API_URL + `/admin/category`,
     {
@@ -193,7 +193,7 @@ export const getCategory = () => {
 };
 
 export const addTest = (test) => {
-  const token = isAuthenticated();
+  const token = isAuthenticatedAdmin();
   return fetch(
     process.env.REACT_APP_API_URL + `/admin/test`,
     {
@@ -212,7 +212,7 @@ export const addTest = (test) => {
 };
 
 export const getTests = (page, limit) => {
-  const token = isAuthenticated();
+  const token = isAuthenticatedAdmin();
   return fetch(
     process.env.REACT_APP_API_URL + `/admin/tests?page=` + page + "&limit=" + limit,
     {
@@ -231,7 +231,7 @@ export const getTests = (page, limit) => {
 };
 
 export const updateTest = (id, test) => {
-  const token = isAuthenticated();
+  const token = isAuthenticatedAdmin();
   test.startTime = (new Date(test.startTime)).getTime()
   test.endTime = (new Date(test.endTime)).getTime()
   return fetch(
@@ -253,7 +253,7 @@ export const updateTest = (id, test) => {
 };
 
 export const deleteTest = (id) => {
-  const token = isAuthenticated();
+  const token = isAuthenticatedAdmin();
   return fetch(
     process.env.REACT_APP_API_URL + `/admin/test/${id}`,
     {
@@ -272,7 +272,7 @@ export const deleteTest = (id) => {
 };
 
 export const updateQuestion = (id, question) => {
-  const token = isAuthenticated();
+  const token = isAuthenticatedAdmin();
   return fetch(
     process.env.REACT_APP_API_URL + `/admin/question/${id}`,
     {
@@ -292,7 +292,7 @@ export const updateQuestion = (id, question) => {
 };
 
 export const deleteQuestion = (id) => {
-  const token = isAuthenticated();
+  const token = isAuthenticatedAdmin();
   return fetch(
     process.env.REACT_APP_API_URL + `/admin/question/${id}`,
     {
@@ -311,7 +311,7 @@ export const deleteQuestion = (id) => {
 };
 
 export const getFeedbacks = (page, limit) => {
-  const token = isAuthenticated();
+  const token = isAuthenticatedAdmin();
   return fetch(
     process.env.REACT_APP_API_URL + `/admin/feedbacks?page=` + page + "&limit=" + limit,
     {

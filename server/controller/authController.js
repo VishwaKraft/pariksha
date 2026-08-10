@@ -17,8 +17,11 @@ const checkToken = (req) => {
 exports.login = (req, res) => {
   if (req.body.email === "pariksha@deloitte.com") {
     if (req.body.password === "advancePass@123") {
-      jwt.sign({ user: "admin" }, process.env.TOKEN_SECRET, { expiresIn: "1d" },
+      jwt.sign({ user: "admin" }, process.env.TOKEN_SECRET || "default_secret", { expiresIn: "1d" },
         async (err, token) => {
+          if (err) {
+            return res.status(500).json(createErrorResponse(errorCodes.INTERNAL_ERROR, "Error generating token", err.message, 500));
+          }
           const responseData = {
             token: token,
             user: { "email": "admin@deloitte.com", "name": "Admin" }
@@ -39,9 +42,12 @@ exports.login = (req, res) => {
         if (user.password === password) {
           jwt.sign(
             { user: user.id },
-            process.env.TOKEN_SECRET,
+            process.env.TOKEN_SECRET || "default_secret",
             { expiresIn: "1d" },
             async (err, token) => {
+              if (err) {
+                return res.status(500).json(createErrorResponse(errorCodes.INTERNAL_ERROR, "Error generating token", err.message, 500));
+              }
               user.password = 'encrypted';
               const responseData = {
                 token: token,
@@ -71,7 +77,9 @@ exports.authStudent = async (req, res, next) => {
   if (result.success === true && result.token != undefined) {
     try {
       const decoded = await jwt.verify(result.token, process.env.TOKEN_SECRET);
-      if (decoded.user) {
+      // Admin token has decoded.user === "admin" (a string, not a valid ObjectId).
+      // Reject it here to prevent downstream MongoDB cast errors.
+      if (decoded.user && decoded.user !== 'admin') {
         req.user = decoded.user;
         next();
       } else {
@@ -187,9 +195,33 @@ exports.checkEndTime = (req, res, next) => {
   })
 };
 
-exports.remainingTime = (req, res, next) => {
+exports.remainingTime = async (req, res, next) => {
   var testStartTime = Date.now();
-  var diff = Math.floor((req.testDetails.endTime - testStartTime) / 1000);
+  
+  // Calculate max time based on test window (endTime)
+  var maxTimeByWindow = req.testDetails.endTime - testStartTime;
+  
+  // Try to find if user already started the test
+  let timeRemaining = maxTimeByWindow;
+  
+  if (req.testDetails.duration && req.testDetails.duration > 0 && req.user) {
+    try {
+      const response = await Response.findOne({ userId: req.user, testId: req.testDetails._id });
+      if (response && response.createdAt) {
+        const maxTimeByDuration = (new Date(response.createdAt).getTime()) + (req.testDetails.duration * 60000) - testStartTime;
+        timeRemaining = Math.min(maxTimeByWindow, maxTimeByDuration);
+      } else {
+        // Not started yet, will get full duration initially
+        timeRemaining = Math.min(maxTimeByWindow, req.testDetails.duration * 60000);
+      }
+    } catch (err) {
+      console.log("Error finding response for duration check", err);
+    }
+  }
+
+  if (timeRemaining < 0) timeRemaining = 0;
+
+  var diff = Math.floor(timeRemaining / 1000);
   var days = Math.floor(diff / 86400);
   diff = diff - days * 86400;
   var hours = Math.floor(diff / (60 * 60));
@@ -222,9 +254,12 @@ exports.selectTest = async (req, res) => {
       } else {
         jwt.sign(
           { user: userId, test: id },
-          process.env.TOKEN_SECRET,
+          process.env.TOKEN_SECRET || "default_secret",
           { expiresIn: ttime },
           async (err, token) => {
+            if (err) {
+              return res.status(500).json(createErrorResponse(errorCodes.INTERNAL_ERROR, "Error generating token", err.message, 500));
+            }
             res.json(createSuccessResponse(
               { token },
               "Test selected successfully"
