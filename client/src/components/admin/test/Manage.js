@@ -9,13 +9,37 @@ export default function BasicTextFields() {
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [shareEmail, setShareEmail] = useState("");
   const [currentShareLink, setCurrentShareLink] = useState("");
+  const [currentTestDetails, setCurrentTestDetails] = useState(null);
 
-  const handleShareClick = () => {
+  const handleShareClick = async () => {
     if (shareEmail) {
-      window.location.href = `mailto:${shareEmail}?subject=Test Link&body=Please take the test using this link: ${currentShareLink}`;
+      try {
+        const response = await fetch(`${process.env.REACT_APP_EMAIL_API_URL}/api/email-events/trigger/pariksha-invite`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            recipients: [shareEmail],
+            variables: { 
+              candidateName: shareEmail.split('@')[0],
+              testName: currentTestDetails ? currentTestDetails.title : "",
+              startTime: currentTestDetails && currentTestDetails.startTime ? new Date(currentTestDetails.startTime).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : "",
+              duration: currentTestDetails && currentTestDetails.duration ? currentTestDetails.duration.toString() + " mins" : "",
+              totalQuestions: "N/A",
+              testLink: currentShareLink
+            }
+          })
+        });
+        if (response.ok) {
+          toast.success("Invite sent successfully!");
+        } else {
+          toast.error("Failed to send invite");
+        }
+      } catch (err) {
+        console.error("Error sending invite:", err);
+        toast.error("Error sending invite");
+      }
       setShareModalOpen(false);
       setShareEmail("");
-      toast.success("Opened email client with link!");
     }
   };
 
@@ -112,6 +136,7 @@ export default function BasicTextFields() {
             onClick: (event, rowData) => {
               const link = window.location.origin + "/student/test/" + rowData._id;
               setCurrentShareLink(link);
+              setCurrentTestDetails(rowData);
               setShareModalOpen(true);
             }
           }
