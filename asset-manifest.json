@@ -1,8 +1,8 @@
 {
   "files": {
     "main.css": "/pariksha/static/css/main.9484c408.chunk.css",
-    "main.js": "/pariksha/static/js/main.288bd7cf.chunk.js",
-    "main.js.map": "/pariksha/static/js/main.288bd7cf.chunk.js.map",
+    "main.js": "/pariksha/static/js/main.b4bf35cb.chunk.js",
+    "main.js.map": "/pariksha/static/js/main.b4bf35cb.chunk.js.map",
     "runtime-main.js": "/pariksha/static/js/runtime-main.1f6b7baf.js",
     "runtime-main.js.map": "/pariksha/static/js/runtime-main.1f6b7baf.js.map",
     "static/css/2.a00c7f48.chunk.css": "/pariksha/static/css/2.a00c7f48.chunk.css",
@@ -29,6 +29,6 @@
     "static/css/2.a00c7f48.chunk.css",
     "static/js/2.185837bc.chunk.js",
     "static/css/main.9484c408.chunk.css",
-    "static/js/main.288bd7cf.chunk.js"
+    "static/js/main.b4bf35cb.chunk.js"
   ]
 }
