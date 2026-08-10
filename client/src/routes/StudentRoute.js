@@ -26,6 +26,7 @@ const StudentRoute = ({ component: Component, ...rest }) => {
           <Redirect
             to={{
               pathname: "/",
+              search: `?redirect=${props.location.pathname}`,
               state: { from: props.location },
             }}
           />

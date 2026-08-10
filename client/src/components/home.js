@@ -22,12 +22,18 @@ function Home(props) {
     async function getAuthStatus() {
       const token = await isAuthenticated();
       if (!!token) {
-        const { from } = props.location.state || { from: { pathname: "/student/dashboard" } };
-        props.history.push(from);
+        const params = new URLSearchParams(props.location.search);
+        const redirectUrl = params.get('redirect');
+        if (redirectUrl) {
+          props.history.push(redirectUrl);
+        } else {
+          const { from } = props.location.state || { from: { pathname: "/student/dashboard" } };
+          props.history.push(from);
+        }
       }
     }
     getAuthStatus();
-  }, [props.history, props.location.state]);
+  }, [props.history, props.location.state, props.location.search]);
 
   const handleChange = (name) => (event) => {
     setValues({ ...values, error: false, [name]: event.target.value });
@@ -51,8 +57,14 @@ function Home(props) {
         } else {
           authenticate(data.data, () => {
             toast.success("Welcome back!");
-            const { from } = props.location.state || { from: { pathname: "/student/dashboard" } };
-            props.history.push(from);
+            const params = new URLSearchParams(props.location.search);
+            const redirectUrl = params.get('redirect');
+            if (redirectUrl) {
+              props.history.push(redirectUrl);
+            } else {
+              const { from } = props.location.state || { from: { pathname: "/student/dashboard" } };
+              props.history.push(from);
+            }
           });
         }
       })
@@ -76,8 +88,14 @@ function Home(props) {
       }
       authenticate(data.data, () => {
         toast.success("Welcome back!");
-        const { from } = props.location.state || { from: { pathname: "/student/dashboard" } };
-        props.history.push(from);
+        const params = new URLSearchParams(props.location.search);
+        const redirectUrl = params.get('redirect');
+        if (redirectUrl) {
+          props.history.push(redirectUrl);
+        } else {
+          const { from } = props.location.state || { from: { pathname: "/student/dashboard" } };
+          props.history.push(from);
+        }
       });
     } catch {
       toast.error("Authentication error occurred!");
