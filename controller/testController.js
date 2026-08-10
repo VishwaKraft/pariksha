@@ -119,6 +119,7 @@ exports.getTest = async (req, res, next) => {
 
 exports.updateTest = async (req, res) => {
   const { id } = req.params;
+  console.log("Updating test", id, req.body);
   try {
     await Test.updateOne({ _id: id }, req.body)
     res.status(200).json(createSuccessResponse(null, "Test updated successfully"));
