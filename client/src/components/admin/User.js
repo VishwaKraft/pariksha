@@ -1,8 +1,29 @@
 import React from "react";
 import MaterialTable from "material-table";
 import { deleteUser, getUsers, updateUser } from "../../helper/admin";
+import EmailIcon from "@material-ui/icons/Email";
 
 function User() {
+  const handleInvite = async (rowData) => {
+    try {
+      const response = await fetch('https://smart-stocks-1c68.onrender.com/api/email-events/trigger/pariksha-invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recipients: [rowData.email],
+          variables: { name: rowData.name }
+        })
+      });
+      if (response.ok) {
+        alert(`Invite sent to ${rowData.email}`);
+      } else {
+        alert('Failed to send invite');
+      }
+    } catch (err) {
+      console.error('Failed to send invite:', err);
+      alert('Error sending invite');
+    }
+  };
 
   return (
     <>
@@ -41,6 +62,13 @@ function User() {
               }, 1000)
             }),
         }}
+        actions={[
+          {
+            icon: () => <EmailIcon />,
+            tooltip: 'Invite Test Taker',
+            onClick: (event, rowData) => handleInvite(rowData)
+          }
+        ]}
         options={{
           grouping: true,
           actionsColumnIndex: -1,
