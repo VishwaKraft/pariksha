@@ -176,7 +176,9 @@ export default function BasicTextFields() {
             icon: 'share',
             tooltip: 'Share Link',
             onClick: (event, rowData) => {
-              const link = window.location.origin + (process.env.PUBLIC_URL || "") + "/student/test/" + rowData._id;
+              const currentPath = window.location.pathname;
+              const basePath = currentPath.replace(/\/admin\/test\/manage.*$/, '');
+              const link = window.location.origin + basePath + "/student/test/" + rowData._id;
               setCurrentShareLink(link);
               setCurrentTestDetails(rowData);
               setShareModalOpen(true);
