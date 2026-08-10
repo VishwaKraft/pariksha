@@ -65,29 +65,7 @@ export default function BasicTextFields() {
         columns={[
           { title: 'Title', field: 'title' },
           { title: 'Description', field: 'description' },
-          { 
-            title: 'Duration (mins)', 
-            field: 'duration', 
-            type: 'numeric',
-            render: rowData => {
-              if (typeof rowData.duration === 'object' && rowData.duration !== null) {
-                return rowData.duration.hour * 60 + rowData.duration.minute;
-              }
-              return rowData.duration;
-            },
-            editComponent: props => {
-              const val = typeof props.value === 'object' && props.value !== null 
-                ? (props.value.hour * 60 + props.value.minute) 
-                : props.value;
-              return (
-                <TextField
-                  type="number"
-                  value={val || ''}
-                  onChange={e => props.onChange(e.target.value)}
-                />
-              );
-            }
-          },
+          { title: 'Duration (mins)', field: 'duration', type: 'numeric' },
           { title: 'Mandatory Category', field: 'mandatoryCategory', editable: 'never' },
           { title: 'Optional Category', field: 'optionalCategory', editable: 'never' },
           { 
@@ -180,7 +158,7 @@ export default function BasicTextFields() {
         editable={{
           onRowUpdate: (newData, oldData) =>
             new Promise((resolve, reject) => {
-              updateTest(oldData._id, newData).then(() => {
+              updateTest(oldData._id, { ...newData }).then(() => {
                 if (tableRef.current) {
                   tableRef.current.onQueryChange();
                 }

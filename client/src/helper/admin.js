@@ -234,6 +234,7 @@ export const updateTest = (id, test) => {
   const token = isAuthenticatedAdmin();
   test.startTime = (new Date(test.startTime)).getTime()
   test.endTime = (new Date(test.endTime)).getTime()
+  test.duration = parseInt(test.duration) || 0;
   return fetch(
     process.env.REACT_APP_API_URL + `/admin/test/${id}`,
     {
