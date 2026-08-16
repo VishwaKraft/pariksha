@@ -8,16 +8,15 @@ import { getCount } from '../../helper/admin';
 
 const useStyles = makeStyles((theme) => ({
   paper: {
-    padding: theme.spacing(2),
+    padding: theme.spacing(4),
     display: "flex",
-    overflow: "auto",
+    overflow: "hidden",
     flexDirection: "column",
+    justifyContent: "space-between",
+    borderRadius: "12px",
   },
   fixedHeight: {
-    height: 200,
-    textAlign: "center",
-    alignItems: "center",
-    alignContent: "center",
+    height: 180,
   },
   img: {
     height: "-webkit-fill-available",
@@ -71,51 +70,51 @@ export default function Main() {
     >
       {/* Recent Deposits */}
       <Grid item xs={12} md={4} lg={4}>
-        <Paper className={fixedHeightPaper}>
-          <Typography component="h2" variant="h6" align="right" color="primary" gutterbottom>
-            Users
-        </Typography>
-          <Typography component="p" variant="h1">
+        <Paper className={fixedHeightPaper} elevation={2}>
+          <Typography component="h2" variant="h6" align="left" color="textSecondary" style={{ fontWeight: 600 }}>
+            USERS
+          </Typography>
+          <Typography component="p" variant="h2" align="left" color="primary" style={{ fontWeight: 'bold' }}>
             {users}
           </Typography>
         </Paper>
       </Grid>
       <Grid item xs={12} md={4} lg={4}>
-        <Paper className={fixedHeightPaper}>
-          <Typography component="h2" variant="h6" align="right" color="primary" gutterbottom>
-            Questions
-        </Typography>
-          <Typography component="p" variant="h1">
+        <Paper className={fixedHeightPaper} elevation={2}>
+          <Typography component="h2" variant="h6" align="left" color="textSecondary" style={{ fontWeight: 600 }}>
+            QUESTIONS
+          </Typography>
+          <Typography component="p" variant="h2" align="left" color="primary" style={{ fontWeight: 'bold' }}>
             {questions}
           </Typography>
         </Paper>
       </Grid>
       <Grid item xs={12} md={4} lg={4}>
-        <Paper className={fixedHeightPaper}>
-          <Typography component="h2" variant="h6" align="right" color="primary" gutterbottom>
-            Test
-        </Typography>
-          <Typography component="p" variant="h1">
+        <Paper className={fixedHeightPaper} elevation={2}>
+          <Typography component="h2" variant="h6" align="left" color="textSecondary" style={{ fontWeight: 600 }}>
+            TESTS
+          </Typography>
+          <Typography component="p" variant="h2" align="left" color="primary" style={{ fontWeight: 'bold' }}>
             {tests}
           </Typography>
         </Paper>
       </Grid>
       <Grid item xs={12} md={4} lg={4}>
-        <Paper className={fixedHeightPaper}>
-          <Typography component="h2" variant="h6" align="right" color="primary" gutterbottom>
-            Response
-        </Typography>
-          <Typography component="p" variant="h1">
+        <Paper className={fixedHeightPaper} elevation={2}>
+          <Typography component="h2" variant="h6" align="left" color="textSecondary" style={{ fontWeight: 600 }}>
+            RESPONSES
+          </Typography>
+          <Typography component="p" variant="h2" align="left" color="primary" style={{ fontWeight: 'bold' }}>
             {responses}
           </Typography>
         </Paper>
       </Grid>
       <Grid item xs={12} md={4} lg={4}>
-        <Paper className={fixedHeightPaper}>
-          <Typography component="h2" variant="h6" align="right" color="primary" gutterbottom>
-            Feedbacks
-        </Typography>
-          <Typography component="p" variant="h1">
+        <Paper className={fixedHeightPaper} elevation={2}>
+          <Typography component="h2" variant="h6" align="left" color="textSecondary" style={{ fontWeight: 600 }}>
+            FEEDBACKS
+          </Typography>
+          <Typography component="p" variant="h2" align="left" color="primary" style={{ fontWeight: 'bold' }}>
             {feedbacks}
           </Typography>
         </Paper>

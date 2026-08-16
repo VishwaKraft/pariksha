@@ -26,7 +26,6 @@ const useStyles = makeStyles((theme) => ({
     backgroundColor: '#171717',
     color: '#ffffff',
     border: '1px solid #333',
-    height: '100%',
   },
   premiumButton: {
     backgroundColor: '#ffffff',
@@ -256,7 +255,7 @@ const Instruction = () => {
               container
               direction="row"
               justifyContent="center"
-              alignItems="stretch"
+              alignItems="flex-start"
               spacing={4}>
               <Grid item xs={12} md={6}>
                 <Paper className={`${classes.pl} ${classes.premiumPaper}`}>
@@ -315,13 +314,14 @@ const Instruction = () => {
                       style={{ textAlign: "-webkit-center", display: "flex", justifyContent: "center" }}
                     >
                       <FormControl className={classes.formControl}>
-                        {optional.length !== 0 ? <InputLabel id="demo-simple-select-outlined-label">Language</InputLabel> : <></>}
+                        {optional.length !== 0 ? <InputLabel id="demo-simple-select-outlined-label" style={{ color: '#fff' }}>Language</InputLabel> : <></>}
                         {optional.length !== 0 ? <Select
                           labelId="demo-simple-select-outlined-label"
                           id="demo-simple-select-outlined"
                           value={lang || ""}
                           onChange={change}
                           label="Language"
+                          style={{ color: '#fff', borderBottom: '1px solid #fff' }}
                         >
                           {optional.map((item, idx) => <MenuItem key={`lang-${idx}`} value={item}>{item.toUpperCase()}</MenuItem>)}
                         </Select> : <></>}
