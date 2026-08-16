@@ -22,6 +22,20 @@ const useStyles = makeStyles((theme) => ({
     margin: theme.spacing ? theme.spacing(1) : 8,
     minWidth: 200,
   },
+  premiumPaper: {
+    backgroundColor: '#171717',
+    color: '#ffffff',
+    border: '1px solid #333',
+    height: '100%',
+  },
+  premiumButton: {
+    backgroundColor: '#ffffff',
+    color: '#000000',
+    fontWeight: 'bold',
+    '&:hover': {
+      backgroundColor: '#e6e6e6',
+    }
+  }
 }));
 
 const Instruction = () => {
@@ -235,18 +249,18 @@ const Instruction = () => {
     return (
       <div>
         <NavBar>
-        <Container>
+        <div style={{ backgroundColor: '#0a0a0a', minHeight: '100vh', paddingBottom: '3rem', paddingTop: '2rem', color: '#ffffff' }}>
+        <Container maxWidth="lg">
           <Box my={4}>
             <Grid
               container
               direction="row"
               justifyContent="center"
-              alignItems="center"
-              spacing={6}
-              style={{ margin: "16px" }}>
+              alignItems="stretch"
+              spacing={4}>
               <Grid item xs={12} md={6}>
-                <Paper className={classes.pl}>
-                  <h1>Instruction</h1>
+                <Paper className={`${classes.pl} ${classes.premiumPaper}`}>
+                  <h1 style={{ color: '#fff' }}>Instruction</h1>
                   <ul>
                     <li>Have a stable internet connection.</li>
                     <li>This is a Web Proctored Exam. Kindly allow camera Permission</li>
@@ -281,7 +295,7 @@ const Instruction = () => {
                 </Paper>
               </Grid>
               <Grid item xs={12} md={6}>
-                <Paper className={classes.pr}>
+                <Paper className={`${classes.pr} ${classes.premiumPaper}`}>
                   <div className="row h-20">
                     <div className="col-md-12 my-3 text-center display-3">
                       <span id="clock" style={{fontSize: "2rem"}}>
@@ -317,7 +331,8 @@ const Instruction = () => {
                   <div className="row">
                     <div className="col-md-12 mb-2 text-center" style={{ display: "flex", justifyContent: "center" }}>
                       <Button
-                        variant="contained" color="primary"
+                        variant="contained"
+                        className={classes.premiumButton}
                         onClick={handleRedirect}
                       >
                         {loading ? (
@@ -364,6 +379,7 @@ const Instruction = () => {
             </Grid>
           </Box>
         </Container>
+        </div>
         </NavBar>
       </div>
     );
