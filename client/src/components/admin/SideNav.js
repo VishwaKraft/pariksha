@@ -97,13 +97,14 @@ class NestedList extends React.Component {
     this.setState({ [e]: !this.state[e] });
   };
   componentDidMount() {
-    if (this.props.match.params.platform) {
-      var k = this.props.match.params.platform
+    const platform = this.props.router?.query?.platform;
+    if (platform) {
+      var k = platform
         .replace(/([A-Z])/g, " $1")
         .trim();
       var result = k.charAt(0).toUpperCase() + k.slice(1);
       this.setState({
-        [result]: !this.state[this.props.match.params.platform],
+        [result]: !this.state[platform],
       });
     }
   }
