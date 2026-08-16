@@ -15,6 +15,7 @@ const cors = require("cors");
 const { createErrorResponse, errorCodes } = require("./utils/errorHandler");
 
 dotenv.config();
+console.log("Environment Variables at Startup:", process.env);
 const PORT = process.env.PORT || 3000;
 
 // view engine setup
