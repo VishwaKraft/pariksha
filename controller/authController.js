@@ -48,6 +48,8 @@ exports.login = (req, res) => {
               if (err) {
                 return res.status(500).json(createErrorResponse(errorCodes.INTERNAL_ERROR, "Error generating token", err.message, 500));
               }
+              user.lastLogin = new Date();
+              await user.save();
               user.password = 'encrypted';
               const responseData = {
                 token: token,
