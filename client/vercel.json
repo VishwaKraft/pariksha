@@ -1,11 +1,5 @@
 {
   "outputDirectory": "out",
   "cleanUrls": true,
-  "trailingSlash": false,
-  "rewrites": [
-    {
-      "source": "/student/test/:id",
-      "destination": "/student/test/[id].html"
-    }
-  ]
+  "trailingSlash": false
 }

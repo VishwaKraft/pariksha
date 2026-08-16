@@ -70,7 +70,7 @@ const useStyles = makeStyles((theme) => ({
     flexGrow: 1,
   },
   drawerClose: {
-    backgroundColor: theme.palette.primary.main,
+    backgroundColor: "#000000",
     transition: theme.transitions.create("width", {
       easing: theme.transitions.easing.sharp,
       duration: theme.transitions.duration.leavingScreen,

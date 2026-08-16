@@ -241,10 +241,10 @@ const Instruction = () => {
               container
               direction="row"
               justifyContent="center"
-              alignItems="flex-start"
+              alignItems="stretch"
               spacing={4}>
-              <Grid item xs={12} md={6}>
-                <Paper className={classes.pl}>
+              <Grid item xs={12} sm={6}>
+                <Paper className={classes.pl} style={{ height: '100%' }}>
                   <h1>Instruction</h1>
                   <ul>
                     <li>Have a stable internet connection.</li>
@@ -279,8 +279,8 @@ const Instruction = () => {
                   </ul>
                 </Paper>
               </Grid>
-              <Grid item xs={12} md={6}>
-                <Paper className={classes.pr}>
+              <Grid item xs={12} sm={6}>
+                <Paper className={classes.pr} style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                   <div className="row h-20">
                     <div className="col-md-12 my-3 text-center display-3">
                       <span id="clock" style={{fontSize: "2rem"}}>
