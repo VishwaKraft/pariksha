@@ -119,6 +119,8 @@ function BackToTop(props) {
   const router = useRouter();
   
   const [userProfile, setUserProfile] = useState({ initials: '', photo: '', email: '' });
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const toggleDropdown = () => setDropdownOpen(!dropdownOpen);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -169,13 +171,13 @@ function BackToTop(props) {
             </div>
             <ul className="navbar-nav me-2 mb-2 mb-lg-0">
               <li className="nav-item dropdown">
-              {!userProfile.photo ? <div className="nav-link  bg-primary text-light rounded-circle text-center" style={{ width: "2.5rem", height: "2.5rem", fontSize: "1.2rem", display: 'flex', alignItems: 'center', justifyContent: 'center' }} id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              {!userProfile.photo ? <div className="nav-link  bg-primary text-light rounded-circle text-center" style={{ width: "2.5rem", height: "2.5rem", fontSize: "1.2rem", display: 'flex', alignItems: 'center', justifyContent: 'center' }} id="navbarDropdown" role="button" onClick={toggleDropdown} aria-expanded={dropdownOpen ? "true" : "false"}>
                 <p style={{margin: 0}}>{userProfile.initials}</p>
               </div>
               :
-              <img alt="profilePhoto" src={userProfile.photo} className="text-light rounded-circle" style={{ width: "2.5rem", height: "2.5rem", objectFit: 'cover' }} id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" />
+              <img alt="profilePhoto" src={userProfile.photo} className="text-light rounded-circle" style={{ width: "2.5rem", height: "2.5rem", objectFit: 'cover', cursor: 'pointer' }} id="navbarDropdown" role="button" onClick={toggleDropdown} aria-expanded={dropdownOpen ? "true" : "false"} />
               }
-                <ul className="dropdown-menu" aria-labelledby="navbarDropdown">
+                <ul className={`dropdown-menu dropdown-menu-end ${dropdownOpen ? 'show' : ''}`} aria-labelledby="navbarDropdown" style={{ position: 'absolute' }}>
                   <li><span className="dropdown-item" >{userProfile.email}</span></li>
                   <li><span className="dropdown-item" >Software Engineer 1</span></li>
                   <li><hr className="dropdown-divider" /></li>

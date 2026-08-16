@@ -141,7 +141,7 @@ class NestedList extends React.Component {
                   </ListItem>
                 ) : (
                   <Link
-                    to={item.link}
+                    href={item.link}
                     style={{
                       color: "inherit",
                       textDecoration: "none",
@@ -183,7 +183,7 @@ class NestedList extends React.Component {
                         {item.items.map((sitem) => {
                           return (
                             <Link
-                              to={sitem.link}
+                              href={sitem.link}
                               style={{
                                 color: "inherit",
                                 textDecoration: "none",
