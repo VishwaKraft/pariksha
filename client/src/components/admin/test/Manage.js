@@ -151,8 +151,8 @@ export default function BasicTextFields() {
                   data: result.data.results ? result.data.results.map(item => {
                     return { ...item }
                   }) : [],
-                  page: result.page ? result.page - 1 : 0,
-                  totalCount: result.total || (result.data.results ? result.data.results.length : 0),
+                  page: result.data.page ? Number(result.data.page) - 1 : 0,
+                  totalCount: result.data.total || (result.data.results ? result.data.results.length : 0),
                 })
               })
               .catch(err => {

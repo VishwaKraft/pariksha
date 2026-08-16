@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import Grid from "@mui/material/Grid";
 import Paper from "@mui/material/Paper";
 import clsx from "clsx";
-import { makeStyles, Typography } from "@mui/material";
+import { Typography } from "@mui/material";
+import { makeStyles } from "@mui/styles";
 import { getCount } from '../../helper/admin';
 
 const useStyles = makeStyles((theme) => ({
