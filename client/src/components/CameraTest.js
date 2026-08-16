@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Typography, Box, Paper } from '@material-ui/core';
+import { Button, Typography, Box, Paper } from '@mui/material';
 
 const CameraTest = ({ onCameraReady, onError }) => {
   const [isTesting, setIsTesting] = useState(false);

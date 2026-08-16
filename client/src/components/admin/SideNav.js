@@ -1,20 +1,21 @@
 import React from "react";
 import PropTypes from "prop-types";
-import DashboardIcon from "@material-ui/icons/Dashboard";
-import VideocamIcon from "@material-ui/icons/Videocam";
-import List from "@material-ui/core/List";
-import ListItem from "@material-ui/core/ListItem";
-import ListItemIcon from "@material-ui/core/ListItemIcon";
-import StarBorder from "@material-ui/icons/StarBorder";
-import ListItemText from "@material-ui/core/ListItemText";
-import Collapse from "@material-ui/core/Collapse";
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import VideocamIcon from "@mui/icons-material/Videocam";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import StarBorder from "@mui/icons-material/StarBorder";
+import ListItemText from "@mui/material/ListItemText";
+import Collapse from "@mui/material/Collapse";
 
-import ExpandLess from "@material-ui/icons/ExpandLess";
-import ExpandMore from "@material-ui/icons/ExpandMore";
+import ExpandLess from "@mui/icons-material/ExpandLess";
+import ExpandMore from "@mui/icons-material/ExpandMore";
 
-import Divider from "@material-ui/core/Divider";
-import { withStyles } from "@material-ui/core/styles";
-import { Link, withRouter } from "react-router-dom";
+import Divider from "@mui/material/Divider";
+import { withStyles } from "@mui/styles";
+import { withRouter } from 'next/router';
+import Link from 'next/link';
 
 const styles = (theme) => ({
   root: {

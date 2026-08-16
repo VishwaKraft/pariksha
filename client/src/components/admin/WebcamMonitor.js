@@ -2,9 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Grid, Paper, Typography, Box, Card, CardContent,
   Chip, IconButton, Tooltip, CircularProgress
-} from '@material-ui/core';
-import { VideocamOff, Person, Refresh, Fullscreen, FullscreenExit } from '@material-ui/icons';
-import { makeStyles } from '@material-ui/core/styles';
+} from '@mui/material';
+import { VideocamOff, Person, Refresh, Fullscreen, FullscreenExit } from '@mui/icons-material';
+import { makeStyles } from '@mui/styles';
 import io from 'socket.io-client';
 import { isAuthenticatedAdmin } from '../../helper/Auth';
 

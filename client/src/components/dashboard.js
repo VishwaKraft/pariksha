@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { makeStyles } from '@material-ui/core/styles';
-import Box from '@material-ui/core/Box';
-import Container from '@material-ui/core/Container';
-import { Card, CardActions, CardContent, Typography, Button, CardActionArea, CardMedia, Grid } from '@material-ui/core';
+import { makeStyles } from '@mui/styles';
+import Box from '@mui/material/Box';
+import Container from '@mui/material/Container';
+import { Card, CardActions, CardContent, Typography, Button, CardActionArea, CardMedia, Grid } from '@mui/material';
 import { getTests } from '../helper/Test';
 import NavBar from "./nav";
-import { Redirect } from 'react-router';
+import { useRouter } from 'next/router';
 import { isAuthenticated } from '../helper/Auth';
+import useStudentAuth from '../hooks/useStudentAuth';
+import CircularProgress from "@mui/material/CircularProgress";
 
 const useStyles = makeStyles((theme) => ({
   card: {
@@ -15,41 +17,42 @@ const useStyles = makeStyles((theme) => ({
   }
 }));
 
-export default function Dashboard(props) {
+export default function Dashboard() {
   const classes = useStyles();
   const [values, setValues] = useState([]);
+  const router = useRouter();
+  const { loading: authLoading, authenticated } = useStudentAuth();
 
   useEffect(() => {
-    getTests().then(async result => {
-      if (result.success === true) {
-        setValues(result.data.results)
-      } else {
-        localStorage.removeItem("token")
-        window.location.reload()
+    if (authenticated) {
+      if (typeof window !== 'undefined' && localStorage.getItem("test-token")) {
+         router.push("/student/questions");
+         return;
       }
-    })
-  }, [props.history])
-
-  const performRedirect = () => {
-    if (localStorage.getItem("test-token")) {
-      return <Redirect to="/student/questions" />;
+      
+      getTests().then(async result => {
+        if (result && result.success === true) {
+          setValues(result.data.results)
+        } else {
+          localStorage.removeItem("token")
+          router.push('/');
+        }
+      })
     }
-    if (!isAuthenticated()) {
-      console.log("Instruction Token" + isAuthenticated());
-      localStorage.removeItem("token");
-      return <Redirect to="/" />;
-    }
-  };
+  }, [router, authenticated])
 
   const handleSelect = (id) => {
     var test = values.find(i => i._id === id)
     localStorage.setItem("test", JSON.stringify(test))
-    props.history.push("/student/test/" + id)
+    router.push("/student/test/" + id)
+  }
+
+  if (authLoading || !authenticated) {
+    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}><CircularProgress /></div>;
   }
 
   return (
     <React.Fragment>
-      {performRedirect()}
       <NavBar>
         <Grid direction="column">
           {
@@ -80,21 +83,20 @@ export default function Dashboard(props) {
                                   title="Contemplative Reptile"
                                 />
                                 <CardContent>
-                                  <Typography gutterbottom variant="h5" component="h2">
+                                  <Typography gutterBottom variant="h5" component="h2">
                                     {item.title.toUpperCase()}
                                   </Typography>
                                   {item.description ? <Typography variant="body2" color="textSecondary" component="p">
                                     {item.description.toUpperCase()}
                                   </Typography> : <></>}
                                   <Typography variant="body2" color="textSecondary" component="p">
-                                    Start Time : {(new Date(item.startTime)).toLocaleString(navigator.language || navigator.languages[0], {
-                                      // weekday: 'short', // long, short, narrow
-                                      day: 'numeric', // numeric, 2-digit
-                                      year: 'numeric', // numeric, 2-digit
-                                      month: 'long', // numeric, 2-digit, long, short, narrow
-                                      hour: 'numeric', // numeric, 2-digit
-                                      minute: 'numeric', // numeric, 2-digit
-                                      second: 'numeric', // numeric, 2-digit
+                                    Start Time : {(new Date(item.startTime)).toLocaleString(undefined, {
+                                      day: 'numeric',
+                                      year: 'numeric',
+                                      month: 'long',
+                                      hour: 'numeric',
+                                      minute: 'numeric',
+                                      second: 'numeric',
                                     })}
                                   </Typography>
                                   <Typography variant="body2" color="textSecondary" component="p">
@@ -104,18 +106,9 @@ export default function Dashboard(props) {
                               </CardActionArea>
                               <CardActions>
                                 {
-                                  // {(new Date(item.startTime)).toLocaleString(navigator.language || navigator.languages[0], {
-                                  //   // weekday: 'short', // long, short, narrow
-                                  //   day: 'numeric', // numeric, 2-digit
-                                  //   year: 'numeric', // numeric, 2-digit
-                                  //   month: 'long', // numeric, 2-digit, long, short, narrow
-                                  //   hour: 'numeric', // numeric, 2-digit
-                                  //   minute: 'numeric', // numeric, 2-digit
-                                  //   second: 'numeric', // numeric, 2-digit
-                                  // })} + 
                                   ((new Date(item.endTime)).getTime()) > ((new Date()).getTime()) ? <Button size="small" style={{ color: "blue" }} onClick={() => handleSelect(item._id)}>
                                     Start
-                                  </Button> : <Button size="small" color="muted" >
+                                  </Button> : <Button size="small" color="inherit" disabled >
                                     Ended
                                   </Button>
                                 }
@@ -159,21 +152,20 @@ export default function Dashboard(props) {
                                 title="Contemplative Reptile"
                               />
                               <CardContent>
-                                <Typography gutterbottom variant="h5" component="h2">
+                                <Typography gutterBottom variant="h5" component="h2">
                                   {item.title.toUpperCase()}
                                 </Typography>
                                 {item.description ? <Typography variant="body2" color="textSecondary" component="p">
                                   {item.description.toUpperCase()}
                                 </Typography> : <></>}
                                 <Typography variant="body2" color="textSecondary" component="p">
-                                  Start Time : {(new Date(item.startTime)).toLocaleString(navigator.language || navigator.languages[0], {
-                                    // weekday: 'short', // long, short, narrow
-                                    day: 'numeric', // numeric, 2-digit
-                                    year: 'numeric', // numeric, 2-digit
-                                    month: 'long', // numeric, 2-digit, long, short, narrow
-                                    hour: 'numeric', // numeric, 2-digit
-                                    minute: 'numeric', // numeric, 2-digit
-                                    second: 'numeric', // numeric, 2-digit
+                                  Start Time : {(new Date(item.startTime)).toLocaleString(undefined, {
+                                    day: 'numeric',
+                                    year: 'numeric',
+                                    month: 'long',
+                                    hour: 'numeric',
+                                    minute: 'numeric',
+                                    second: 'numeric',
                                   })}
                                 </Typography>
                                 <Typography variant="body2" color="textSecondary" component="p">
@@ -182,13 +174,9 @@ export default function Dashboard(props) {
                               </CardContent>
                             </CardActionArea>
                             <CardActions>
-                              {
-                                ((new Date(item.endTime)).getTime()) > ((new Date()).getTime()) ? <Button size="small" style={{ color: "blue" }} onClick={() => handleSelect(item._id)}>
-                                  Start
-                                </Button> : <Button size="small" color="muted" >
-                                  Ended
-                                </Button>
-                              }
+                              <Button size="small" color="inherit" disabled >
+                                Ended
+                              </Button>
                             </CardActions>
                           </Card>
                         </Grid>

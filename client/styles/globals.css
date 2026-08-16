@@ -59,15 +59,6 @@ p.text {
   width: 150px;
 }
 
-.main {
-  background-image: url("./images/Mask Group 6@2x.png");
-  background-size: 100% auto;
-  height: 100vh;
-  width: 100%;
-  background-position: 50%;
-  font-family: cursive;
-}
-
 .logo {
   height: 5rem;
   float: right;
@@ -94,24 +85,19 @@ input::-webkit-outer-spin-button, input::-webkit-inner-spin-button {
 }
 
 /* Firefox */
-
 input[type="number"] {
   -moz-appearance: textfield;
 }
 
 .feedback {
-  background-image: url("./images/background.svg");
   background-size: 100% auto;
   height: 100vh;
   width: 100%;
   background-position: 50%;
   font-family: cursive;
   background-position: center;
-  /* Center the image */
   background-repeat: no-repeat;
-  /* Do not repeat the image */
   background-size: cover;
-  /* Resize the background image to cover the entire container */
 }
 
 .component {
@@ -120,42 +106,28 @@ input[type="number"] {
   box-shadow: 0 4px 8px 0 #fff, 0 6px 20px 0 #000;
 }
 
-/* .navRoot:hover {
-  max-width: 175px;
-  min-width: 175px;
-  width: 175px;
-} */
-
 .hashedinLogo {
-    margin: -1rem;
-    bottom: 4.5rem;
-    font-size: large;
-    position: fixed;
-    color: #fff;
-    transform: rotate(-90deg);
-    flex-direction: column;
-    display: flex;
-    justify-content: center;
+  margin: -1rem;
+  bottom: 4.5rem;
+  font-size: large;
+  position: fixed;
+  color: #fff;
+  transform: rotate(-90deg);
+  flex-direction: column;
+  display: flex;
+  justify-content: center;
 }
 
-/* .navRoot:hover .hashedinLogo  {
-  -webkit-transform: rotate(-1turn);
-  transform: rotate(-1turn);
-  margin-left: 2%;
-  bottom: 1%;
-  bottom: 2rem;
-} */
-
 .hashedinTitle {
-    font-weight: bolder;
-    font-size: 1.4rem;
-    line-height: 1.5rem
+  font-weight: bolder;
+  font-size: 1.4rem;
+  line-height: 1.5rem
 }
 
 .hashedinText {
-    color: #ffa500;
+  color: #ffa500;
 }
 
 .deloitteTitle {
-    font-size: .8rem;
+  font-size: .8rem;
 }

@@ -1,8 +1,9 @@
 import Logo from '../images/brllogo.png'
 import banner from '../images/Group 79.png';
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { signup } from "../helper/Auth";
+import Image from "next/image";
 
 const Signup = () => {
     const [values, setValues] = useState({
@@ -50,7 +51,9 @@ const Signup = () => {
     const signUpForm = () => {
         return (
             <div className="container-fluid main" >
-                <img src={Logo} alt="logo" className="logo" />
+                <div className="logo" style={{position: 'relative', height: '5rem', width: '5rem'}}>
+                  <Image src={Logo} alt="logo" fill style={{objectFit: 'contain'}} />
+                </div>
                 <div className="card center">
                     <div className="row p-5">
                         <div className="col-md-6 d-flex align-items-center justify-content-center">
@@ -82,14 +85,16 @@ const Signup = () => {
                                         </select>
                                     </div>
                                     <div className="d-flex">
-                                        <Link to=''><i className="fas fa-arrow-circle-left next fa-3x" aria-hidden="true" style={{ float: "left" }}></i></Link>
+                                        <Link href='/' legacyBehavior><a style={{ float: "left" }}><i className="fas fa-arrow-circle-left next fa-3x" aria-hidden="true"></i></a></Link>
                                         <button type="submit" className="btn btn-primary ml-2" style={{ float: "right", fontSize: "20px" }} onClick={onSubmit}>Register</button>
                                     </div>
                                 </form>
                             </div>
                         </div>
                         <div className="col-md-6 d-flex align-items-center justify-content-center">
-                            <img src={banner} alt="banner" style={{ maxWidth: '-webkit-fill-available' }} />
+                            <div style={{position: 'relative', width: '100%', height: '300px'}}>
+                                <Image src={banner} alt="banner" fill style={{objectFit: 'contain'}} />
+                            </div>
                         </div>
                     </div>
                 </div>

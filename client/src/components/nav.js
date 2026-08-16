@@ -1,23 +1,22 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
-import AppBar from '@material-ui/core/AppBar';
-import Toolbar from '@material-ui/core/Toolbar';
+import AppBar from '@mui/material/AppBar';
+import Toolbar from '@mui/material/Toolbar';
 import clsx from "clsx";
-import { makeStyles } from "@material-ui/core/styles";
-import Drawer from "@material-ui/core/Drawer";
-import CssBaseline from '@material-ui/core/CssBaseline';
-import useScrollTrigger from '@material-ui/core/useScrollTrigger';
-import Fab from '@material-ui/core/Fab';
-import KeyboardArrowUpIcon from '@material-ui/icons/KeyboardArrowUp';
-import Zoom from '@material-ui/core/Zoom';
+import { makeStyles } from "@mui/styles";
+import Drawer from "@mui/material/Drawer";
+import CssBaseline from '@mui/material/CssBaseline';
+import useScrollTrigger from '@mui/material/useScrollTrigger';
+import Fab from '@mui/material/Fab';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import Zoom from '@mui/material/Zoom';
 import logo from "../images/blockchainIcon.png";
-// import { IconButton } from '@material-ui/core';
-import ExitToAppIcon from "@material-ui/icons/ExitToApp";
-import { Link } from 'react-router-dom';
+import ExitToAppIcon from "@mui/icons-material/ExitToApp";
+import Link from 'next/link';
 import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import { withRouter } from "react-router-dom";
-import { Box } from '@material-ui/core';
+import { useRouter } from "next/router";
+import { Box } from '@mui/material';
+import Image from 'next/image';
 
 const drawerWidth = 240;
 
@@ -70,7 +69,6 @@ const useStyles = makeStyles((theme) => ({
   title: {
     flexGrow: 1,
   },
-
   drawerClose: {
     backgroundColor: theme.palette.primary.main,
     transition: theme.transitions.create("width", {
@@ -88,9 +86,6 @@ const useStyles = makeStyles((theme) => ({
 function ScrollTop(props) {
   const { children, window } = props;
   const classes = useStyles();
-  // Note that you normally won't need to set the window ref as useScrollTrigger
-  // will default to window.
-  // This is only being set here because the demo is in an iframe.
   const trigger = useScrollTrigger({
     target: window ? window() : undefined,
     disableHysteresis: true,
@@ -116,52 +111,44 @@ function ScrollTop(props) {
 
 ScrollTop.propTypes = {
   children: PropTypes.element.isRequired,
-  /**
-   * Injected by the documentation to work in an iframe.
-   * You won't need it on your project.
-   */
   window: PropTypes.func,
 };
 
 function BackToTop(props) {
   const classes = useStyles();
+  const router = useRouter();
+  
+  const [userProfile, setUserProfile] = useState({ initials: '', photo: '', email: '' });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      let photo = localStorage.getItem("profileUrl");
+      let intials = '';
+      if (!photo) {
+        let name = localStorage.getItem("name") || "";
+        let nameArr = name.split(" ");
+        if (nameArr.length === 1 && nameArr[0]) {
+          intials = nameArr[0].charAt(0).toUpperCase();
+        } else if (nameArr.length > 1) {
+          intials = nameArr[0].charAt(0).toUpperCase() + nameArr[nameArr.length - 1].charAt(0).toUpperCase();
+        }
+      }
+      let email = localStorage.getItem("email") || "";
+      setUserProfile({ initials: intials, photo, email });
+    }
+  }, []);
 
   const handleLogout = () => {
     toast.success('Logout Successfully!');
 
-    setTimeout(5000);
     localStorage.removeItem("token");
     localStorage.removeItem("name");
     localStorage.removeItem("email");
-    props.history.push('/');
-
+    localStorage.removeItem("profileUrl");
+    router.push('/');
   };
 
-  var intials, photo;
-  if(localStorage.getItem("profileUrl") !== null) {
-    photo = localStorage.getItem("profileUrl");
-  }
-  else {
-    var nameArr = localStorage.getItem("name").split(" ");
-    if (nameArr.length === 1) {
-      intials = nameArr[0].charAt(0).toUpperCase();
-    }
-    else {
-      intials = nameArr[0].charAt(0).toUpperCase() + nameArr[nameArr.length - 1].charAt(0).toUpperCase();
-    }
-  }
-  var email = localStorage.getItem("email");
-
-  // const [open, setOpen] = React.useState(false);
-
-  const open = false
-  // const handleDrawerOpen = () => {
-  //   setOpen(true);
-  // };
-
-  // const handleDrawerClose = () => {
-  //   setOpen(false);
-  // };
+  const open = false;
 
   return (
     <React.Fragment>
@@ -174,25 +161,26 @@ function BackToTop(props) {
           })}>
           <Toolbar className={classes.toolBar}>
             <div className={classes.title}>
-              <Link to="/student/dashboard">
-                <img src={logo} style={{ width: "3rem", height: "3rem" }} alt="banner" />
+              <Link href="/student/dashboard" passHref legacyBehavior>
+                <a>
+                  <Image src={logo} style={{ width: "3rem", height: "3rem" }} alt="banner" />
+                </a>
               </Link>
             </div>
             <ul className="navbar-nav me-2 mb-2 mb-lg-0">
-
               <li className="nav-item dropdown">
-              {photo === undefined ? <div className="nav-link  bg-primary text-light rounded-circle text-center" style={{ width: "2.5rem", height: "2.5rem", fontSize: "1.2rem" }} id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                <p>{intials}</p>
+              {!userProfile.photo ? <div className="nav-link  bg-primary text-light rounded-circle text-center" style={{ width: "2.5rem", height: "2.5rem", fontSize: "1.2rem", display: 'flex', alignItems: 'center', justifyContent: 'center' }} id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <p style={{margin: 0}}>{userProfile.initials}</p>
               </div>
               :
-              <img alt="profilePhoto" src={photo} className="text-light rounded-circle" style={{ width: "2.5rem", height: "2.5rem" }} id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-              </img>}
+              <img alt="profilePhoto" src={userProfile.photo} className="text-light rounded-circle" style={{ width: "2.5rem", height: "2.5rem", objectFit: 'cover' }} id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" />
+              }
                 <ul className="dropdown-menu" aria-labelledby="navbarDropdown">
-                  <li><span className="dropdown-item" >{email}</span></li>
+                  <li><span className="dropdown-item" >{userProfile.email}</span></li>
                   <li><span className="dropdown-item" >Software Engineer 1</span></li>
                   <li><hr className="dropdown-divider" /></li>
                   <li><span className="dropdown-item" >
-                    <button className="dropdown-item" onClick={handleLogout}> <ExitToAppIcon /> Logout </button></span>
+                    <button className="dropdown-item" onClick={handleLogout} style={{cursor: 'pointer', background: 'none', border: 'none', display: 'flex', alignItems: 'center'}}> <ExitToAppIcon style={{marginRight: '8px'}} /> Logout </button></span>
                   </li>
                 </ul>
               </li>
@@ -239,4 +227,4 @@ function BackToTop(props) {
   );
 };
 
-export default withRouter(BackToTop);
+export default BackToTop;

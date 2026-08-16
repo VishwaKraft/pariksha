@@ -1,29 +1,34 @@
-import CircularProgress from "@material-ui/core/CircularProgress";
+import CircularProgress from "@mui/material/CircularProgress";
 import NavBar from "./nav";
 import React, { useState, useEffect, useCallback } from "react";
-import { Redirect, withRouter, useParams } from "react-router-dom";
+import { useRouter } from "next/router";
 import { isAuthenticated } from "../helper/Auth";
 import { getQuestions, getTestToken, selectTest } from "../helper/Test";
 import Webcam from "react-webcam";
 import webSocketService from "../helper/WebSocketService";
 import CameraTest from "./CameraTest";
-import { Box, Button, Container, FormControl, Grid, InputLabel, makeStyles, MenuItem, Paper, Select } from "@material-ui/core";
+import { Box, Button, Container, FormControl, Grid, InputLabel, MenuItem, Paper, Select } from "@mui/material";
+import { makeStyles } from '@mui/styles';
+import useStudentAuth from "../hooks/useStudentAuth";
 
 const useStyles = makeStyles((theme) => ({
   pl: {
-    padding: theme.spacing(5),
+    padding: theme.spacing ? theme.spacing(5) : 40,
   },
   pr: {
-    padding: theme.spacing(2),
+    padding: theme.spacing ? theme.spacing(2) : 16,
   },
   formControl: {
-    margin: theme.spacing(1),
+    margin: theme.spacing ? theme.spacing(1) : 8,
     minWidth: 200,
   },
 }));
 
-
 const Instruction = () => {
+  const router = useRouter();
+  const { id } = router.query;
+  const { loading: authLoading, authenticated } = useStudentAuth();
+  
   const [testLoaded, setTestLoaded] = useState(false);
   const [values, setValues] = useState({
     hour: 0,
@@ -55,14 +60,13 @@ const Instruction = () => {
     showCameraTest,
   } = values;
 
-  const token = isAuthenticated();
-
-  const { id } = useParams();
-
   useEffect(() => {
+    if (!id || !authenticated) return;
     let testObj = null;
     try {
-      testObj = JSON.parse(localStorage.getItem("test"));
+      if (typeof window !== 'undefined') {
+        testObj = JSON.parse(localStorage.getItem("test"));
+      }
     } catch (e) {}
 
     const initializeTest = (testData) => {
@@ -74,7 +78,7 @@ const Instruction = () => {
         second: testData.duration && testData.duration.second ? testData.duration.second : 0,
         optional: testData.optionalCategory && testData.optionalCategory.length > 0 ? testData.optionalCategory : [],
         mandatory: testData.mandatoryCategory ? testData.mandatoryCategory : [],
-        startTime: testData.startTime ? (new Date(testData.startTime)).toLocaleString(navigator.language || navigator.languages[0], {
+        startTime: testData.startTime ? (new Date(testData.startTime)).toLocaleString(undefined, {
           day: 'numeric', year: 'numeric', month: 'short', hour: 'numeric', minute: 'numeric'
         }) : "",
         lang: testData.optionalCategory && testData.optionalCategory.length > 0 ? testData.optionalCategory[0] : null,
@@ -97,20 +101,19 @@ const Instruction = () => {
         setTestLoaded(true);
       });
     }
-  }, [id]);
+  }, [id, authenticated]);
 
   const handleRedirect = async (event) => {
     if (isCameraOne === false) {
       setValues({ ...values, error: "Please Turn On Camera!", showCameraTest: true });
-      document.getElementById("errorText").classList.add("d-block");
     } else {
       setValues({ ...values, error: false, loading: true });
       getTestToken(id).then(result => {
-        if (result.success === true && result.data.token) {
+        if (result && result.success === true && result.data.token) {
           localStorage.setItem("test-token", result.data.token)
           getQuestions(lang)
             .then((res) => {
-              if (res.success === true && res.data.res_questions) {
+              if (res && res.success === true && res.data.res_questions) {
                 localStorage.setItem(
                   "questions",
                   JSON.stringify(res.data.res_questions)
@@ -124,36 +127,28 @@ const Instruction = () => {
                   didRedirect: true,
                 }));
               } else {
-                setValues({ ...values, error: res.error.message });
-                document.getElementById("errorText").classList.add("d-block");
+                setValues({ ...values, error: res?.error?.message || "Failed to load questions", loading: false });
               }
             })
-            .catch((err) => console.log(err));
+            .catch((err) => {
+                console.log(err);
+                setValues({ ...values, error: "Network Error", loading: false });
+            });
         } else {
-          setValues({ ...values, error: result.error.message });
-          document.getElementById("errorText").classList.add("d-block");
+          setValues({ ...values, error: result?.error?.message || "Failed to get token", loading: false });
         }
-        console.log(result)
-      }).catch((err) => console.log(err));
-
+      }).catch((err) => {
+          console.log(err);
+          setValues({ ...values, error: "Network Error", loading: false });
+      });
     }
   };
 
-  const performRedirect = () => {
-    if (didRedirect === true && loading === false) {
-      if (token) {
-        return <Redirect to="/student/questions" />;
-      }
+  useEffect(() => {
+    if (didRedirect === true && loading === false && typeof window !== 'undefined') {
+        router.push("/student/questions");
     }
-    if (localStorage.getItem("test-token")) {
-      return <Redirect to="/student/questions" />;
-    }
-    if (!isAuthenticated() || error === "Token is not valid") {
-      console.log("Instruction Token" + isAuthenticated());
-      localStorage.removeItem("token");
-      return <Redirect to="/" />;
-    }
-  };
+  }, [didRedirect, loading, router]);
 
   const change = (event) => {
     var val = event.target.value;
@@ -165,7 +160,6 @@ const Instruction = () => {
 
   const initializeWebcam = useCallback(async () => {
     try {
-      // Step 1: Verify camera access first (independent of WebSocket)
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error('Camera access not supported in this browser');
       }
@@ -175,17 +169,14 @@ const Instruction = () => {
         audio: false
       });
 
-      // Camera is confirmed working — mark it on immediately
       setValues(prev => ({
         ...prev,
         isCameraOne: true,
         error: "",
       }));
 
-      // Stop this probe stream (Webcam component manages its own stream)
       stream.getTracks().forEach(track => track.stop());
 
-      // Step 2: Try WebSocket (non-blocking — failure won't prevent test start)
       try {
         const token = isAuthenticated();
         if (token) {
@@ -200,7 +191,6 @@ const Instruction = () => {
           });
         }
       } catch (wsError) {
-        // WebSocket failure is non-fatal — camera is still confirmed on
         console.warn("WebSocket streaming unavailable (non-fatal):", wsError.message);
       }
 
@@ -208,13 +198,13 @@ const Instruction = () => {
       console.error("Webcam initialization error:", error);
       let errorMessage = "Camera access denied or not available";
 
-      if (error.name === 'NotAllowedError' || error.message.includes('Camera access denied')) {
+      if (error.name === 'NotAllowedError' || (error.message && error.message.includes('Camera access denied'))) {
         errorMessage = "Camera access denied. Please allow camera permissions and refresh the page.";
-      } else if (error.name === 'NotFoundError' || error.message.includes('No camera found')) {
+      } else if (error.name === 'NotFoundError' || (error.message && error.message.includes('No camera found'))) {
         errorMessage = "No camera found. Please connect a camera and try again.";
-      } else if (error.name === 'NotReadableError' || error.message.includes('already in use')) {
+      } else if (error.name === 'NotReadableError' || (error.message && error.message.includes('already in use'))) {
         errorMessage = "Camera is already in use by another application. Please close other apps using the camera.";
-      } else if (error.message.includes('not supported')) {
+      } else if (error.message && error.message.includes('not supported')) {
         errorMessage = "Camera access not supported in this browser. Please use Chrome or Firefox.";
       }
 
@@ -227,15 +217,17 @@ const Instruction = () => {
   }, [id]);
 
   useEffect(() => {
-    initializeWebcam();
-
+    if (authenticated) {
+        initializeWebcam();
+    }
     return function cleanup() {
-      // Stop video streaming but don't disconnect — questions.js will reconnect
       webSocketService.stopVideoStreaming();
-      localStorage.removeItem("optional");
-      localStorage.removeItem("mandatoryCategory");
+      if (typeof window !== 'undefined') {
+          localStorage.removeItem("optional");
+          localStorage.removeItem("mandatoryCategory");
+      }
     };
-  }, [id, initializeWebcam]);
+  }, [id, initializeWebcam, authenticated]);
 
   const classes = useStyles();
 
@@ -248,98 +240,82 @@ const Instruction = () => {
             <Grid
               container
               direction="row"
-              justify="center"
+              justifyContent="center"
               alignItems="center"
               spacing={6}
-              margin={2}>
-              <Grid item>
+              style={{ margin: "16px" }}>
+              <Grid item xs={12} md={6}>
                 <Paper className={classes.pl}>
                   <h1>Instruction</h1>
                   <ul>
                     <li>Have a stable internet connection.</li>
-                    <li>
-                      This is a Web Proctored Exam. Kindly allow camera Permission
-                    </li>
-                    <li>
-                      Do Not "Refresh" Or "Close" this tab or else you will be logged
-                      out.
-                    </li>
-                    <li>
-                      The test button will be active at {startTime} after which you will lose time for the test.
-                    </li>
+                    <li>This is a Web Proctored Exam. Kindly allow camera Permission</li>
+                    <li>Do Not "Refresh" Or "Close" this tab or else you will be logged out.</li>
+                    <li>The test button will be active at {startTime} after which you will lose time for the test.</li>
                     <li>
                       There would be questions for each
                       {<ul>
                         {
-                          mandatory.map(categ => (
-                            <li>
+                          mandatory.map((categ, idx) => (
+                            <li key={`man-${idx}`}>
                               {categ.toUpperCase()}
                             </li>
                           ))
                         }
                         {optional.length > 0 ? (<li> Any One : {
-                          optional.map(categ => (
-                            <span>{categ.toUpperCase()} &nbsp;</span>
+                          optional.map((categ, idx) => (
+                            <span key={`opt-${idx}`}>{categ.toUpperCase()} &nbsp;</span>
                           ))
                         }</li>) : <></>}
                       </ul>}
 
                     </li>
                     <li>Test will be auto submit after the time expires.</li>
+                    <li>Switching tabs is strictly prohibited and would be considered in the final evaluation.</li>
+                    <li>Answers once submitted cannot be unmarked but can be modified.</li>
+                    <li>Marked answers will not be Submitted at the End of test.</li>
                     <li>
-                      Switching tabs is strictly prohibited and would be considered in the final evaluation.
-                    </li>
-                    <li>
-                      Answers once submitted cannot be unmarked but can be modified.
-                    </li>
-                    <li>
-                      Marked answers will not be Submitted at the End of test.
-                    </li>
-                    <li>
-                      <b>
-                        You will be awarded 1 mark for Correct Answer and there is
-                        no negative marking.
-                      </b>
+                      <b>You will be awarded 1 mark for Correct Answer and there is no negative marking.</b>
                     </li>
                   </ul>
                 </Paper>
               </Grid>
-              <Grid item>
+              <Grid item xs={12} md={6}>
                 <Paper className={classes.pr}>
                   <div className="row h-20">
                     <div className="col-md-12 my-3 text-center display-3">
-                      <span id="clock">
+                      <span id="clock" style={{fontSize: "2rem"}}>
                         {hour}:{minute < 10 ? `0${minute}` : minute}:
                         {second < 10 ? `0${second}` : second}
                       </span>
                     </div>
                   </div>
                   <div className="row">
-                    <div className="col-12">
+                    <div className="col-12" style={{ display: 'flex', justifyContent: 'center' }}>
                       <Webcam id="cam" style={{ width: "100%", maxWidth: "320px", height: "240px", margin: "0 auto", display: "block" }} />
                     </div>
                   </div>
                   <div className="row">
                     <div
                       className="col-md-12"
-                      style={{ textAlign: "-webkit-center" }}
+                      style={{ textAlign: "-webkit-center", display: "flex", justifyContent: "center" }}
                     >
                       <FormControl className={classes.formControl}>
                         {optional.length !== 0 ? <InputLabel id="demo-simple-select-outlined-label">Language</InputLabel> : <></>}
                         {optional.length !== 0 ? <Select
                           labelId="demo-simple-select-outlined-label"
                           id="demo-simple-select-outlined"
-                          value={lang}
+                          value={lang || ""}
                           onChange={change}
-                          label="land"
+                          label="Language"
                         >
-                          {optional.map(item => <MenuItem value={item}>{item.toUpperCase()}</MenuItem>)}
+                          {optional.map((item, idx) => <MenuItem key={`lang-${idx}`} value={item}>{item.toUpperCase()}</MenuItem>)}
                         </Select> : <></>}
                       </FormControl>
                     </div>
                   </div>
                   <div className="row">
-                    <div className="col-md-12 mb-2 text-center">
+                    <div className="col-md-12 mb-2 text-center" style={{ display: "flex", justifyContent: "center" }}>
                       <Button
                         variant="contained" color="primary"
                         onClick={handleRedirect}
@@ -347,7 +323,7 @@ const Instruction = () => {
                         {loading ? (
                           <>
                             <CircularProgress
-                              color="light"
+                              color="inherit"
                               style={{
                                 height: "1rem",
                                 width: "1rem",
@@ -361,27 +337,19 @@ const Instruction = () => {
                       </Button>
                     </div>
                   </div>
-                  <div className="row">
-                    <div
-                      className="col-md-12"
-                      style={{ textAlign: "-webkit-center" }}
-                    >
-                      <div
-                        className="invalid-feedback text-center"
-                        id="errorText"
-                      >
+                  {error && (
+                    <div className="row">
+                        <div className="col-md-12 text-center" style={{ color: 'red', marginTop: '10px' }}>
                         {error}
-                      </div>
+                        </div>
                     </div>
-                  </div>
+                  )}
                   {showCameraTest && (
                     <div className="row" style={{ marginTop: "20px" }}>
                       <div className="col-md-12">
                         <CameraTest
                           onCameraReady={() => {
                             setValues(prev => ({ ...prev, showCameraTest: false, error: "" }));
-                            document.getElementById("errorText").classList.remove("d-block");
-                            // Retry camera initialization
                             initializeWebcam();
                           }}
                           onError={(errorMsg) => {
@@ -401,6 +369,8 @@ const Instruction = () => {
     );
   };
 
+  if (authLoading || !authenticated) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}><CircularProgress /></div>;
+
   return (
     <>
       {!testLoaded ? (
@@ -410,9 +380,8 @@ const Instruction = () => {
       ) : (
         information()
       )}
-      {performRedirect()}
     </>
   );
 };
 
-export default withRouter(Instruction);
+export default Instruction;

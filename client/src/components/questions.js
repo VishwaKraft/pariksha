@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-// import PropTypes from 'prop-types';
 import NavBar from "./nav";
 import { cheatingCounter } from "../helper/Test";
 import { submitAnswer, endTest } from "../helper/Test";
@@ -7,15 +6,19 @@ import { Modal } from "react-bootstrap";
 import Webcam from "react-webcam";
 import webSocketService from "../helper/WebSocketService";
 import { isAuthenticated } from "../helper/Auth";
+import CircularProgress from "@mui/material/CircularProgress";
+import { Paper, Button } from "@mui/material";
+import { useRouter } from "next/router";
+import useStudentAuth from "../hooks/useStudentAuth";
 
-import CircularProgress from "@material-ui/core/CircularProgress";
-import { Paper, Button } from "@material-ui/core";
-import { withRouter } from "react-router";
-const Questions = (props) => {
+const Questions = () => {
+  const router = useRouter();
+  const { loading: authLoading, authenticated } = useStudentAuth();
 
   const getLocalStorageItem = (key, defaultValue) => {
     try {
-      const item = localStorage.getItem(key);
+      if (typeof window === 'undefined') return defaultValue;
+      const item = window.localStorage.getItem(key);
       return item ? JSON.parse(item) : defaultValue;
     } catch (error) {
       console.error(`Error parsing localStorage item ${key}:`, error);
@@ -49,14 +52,14 @@ const Questions = (props) => {
       mark: mark,
       index: 0,
       loading: false,
-      // Camera was already confirmed on the instruction page — default true
       isCameraOne: true,
       error: "",
+      end: false,
     };
   });
 
-  // Connect to WebSocket and start streaming for the duration of the exam
   useEffect(() => {
+    if (!authenticated) return;
     const token = isAuthenticated();
     if (!token) return;
 
@@ -73,7 +76,6 @@ const Questions = (props) => {
         });
         console.log('Webcam streaming active during exam');
       } catch (err) {
-        // Non-fatal — log but don't block the exam
         console.warn('Webcam streaming unavailable during exam:', err.message);
       }
     };
@@ -84,8 +86,7 @@ const Questions = (props) => {
       webSocketService.stopVideoStreaming();
       webSocketService.disconnect();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [authenticated]);
 
   const [show, setShow] = useState(false);
   const handleClose = () => setShow(false);
@@ -96,25 +97,25 @@ const Questions = (props) => {
   const handleEndShow = () => setEndShow(true);
 
   const { hour, minute, second } = time;
-  const { data, id, index, option, save, mark, loading, isCameraOne, error } =
-    values;
+  const { data, id, index, option, save, mark, loading, isCameraOne, error, end } = values;
 
   const handleChange = (name) => (event) => {
-    document.getElementById("errorText").classList.remove("d-block");
+    document.getElementById("errorText")?.classList.remove("d-block");
     localStorage.setItem("index", event.currentTarget.value);
     var question = getLocalStorageItem("questions", []);
-    const index = parseInt(event.currentTarget.value, 10);
-    const questionId = question[index]?._id ?? null;
+    const indexStr = event.currentTarget.value;
+    const indexInt = parseInt(indexStr, 10);
+    const questionId = question[indexInt]?._id ?? null;
     var found = getLocalStorageItem("mark", []).find(
       (item) => item.question === questionId,
     );
-    const option = found?.response ?? NaN;
+    const selectedOption = found?.response ?? NaN;
 
     setValues({
       ...values,
-      [name]: parseInt(index),
+      [name]: indexInt,
       id: questionId,
-      option: option,
+      option: selectedOption,
     });
   };
 
@@ -131,19 +132,20 @@ const Questions = (props) => {
   };
 
   useEffect(() => {
-    if (hour === 0 && minute === 0 && second === 0) {
+    if (!authenticated) return;
+    if (hour === 0 && minute === 0 && second === 0 && !end) {
       var filteredResponse = getLocalStorageItem("mark", []).map((item) => {
         return { question: item.question, response: item.response };
       });
       endTest({ responses: filteredResponse })
         .then((data) => {
-          if (data.success === false) {
-            setValues({ ...values, error: data.error.message });
+          if (data && data.success === false) {
+            setValues(v => ({ ...v, error: data.error.message }));
             handleShow();
           } else {
-            setValues({ ...values, end: true });
+            setValues(v => ({ ...v, end: true }));
             cleanup();
-            window.location.href = process.env.PUBLIC_URL + "/student/feedback";
+            router.push("/student/feedback");
           }
         })
         .catch((error) => {
@@ -158,7 +160,7 @@ const Questions = (props) => {
           "time",
           JSON.stringify({
             hour: hour,
-            second: second,
+            second: second - 1,
             minute: minute,
           }),
         );
@@ -166,9 +168,9 @@ const Questions = (props) => {
       if (second === 0) {
         if (minute === 0) {
           if (hour === 0) {
-            setValues({ ...values, error: "Test Has Ended" });
+            setValues(v => ({ ...v, error: "Test Has Ended" }));
             cleanup();
-            props.history.push("/student/feedback");
+            if (!end) router.push("/student/feedback");
           } else {
             setTime((time) => ({
               hour: time.hour - 1,
@@ -178,9 +180,9 @@ const Questions = (props) => {
             localStorage.setItem(
               "time",
               JSON.stringify({
-                hour: hour,
-                second: second,
-                minute: minute,
+                hour: hour - 1,
+                second: 59,
+                minute: 59,
               }),
             );
           }
@@ -194,36 +196,36 @@ const Questions = (props) => {
             "time",
             JSON.stringify({
               hour: hour,
-              second: second,
-              minute: minute,
+              second: 59,
+              minute: minute - 1,
             }),
           );
         }
       }
     }, 1000);
     window.addEventListener("blur", onBlur);
-    return function cleanup() {
+    return function cleanupEffect() {
       window.removeEventListener("blur", onBlur);
       clearInterval(timmer);
     };
     // eslint-disable-next-line
-  }, [hour, minute, second]);
+  }, [hour, minute, second, authenticated, end]);
 
   const submit = () => {
     if (isNaN(option)) {
       setValues({ ...values, error: "Please Select Any Option!" });
-      document.getElementById("errorText").classList.add("d-block");
+      document.getElementById("errorText")?.classList.add("d-block");
     } else {
       setValues({ ...values, error: false, loading: true });
       let res = { question: id, response: parseInt(option) };
       submitAnswer(res)
-        .then((data) => {
-          if (data.success === false) {
-            setValues({ ...values, error: data.error.message, loading: false });
+        .then((respData) => {
+          if (respData && respData.success === false) {
+            setValues({ ...values, error: respData.error.message, loading: false });
             handleShow();
-          } else if (data.message) {
-            setValues({ ...values, error: data.message });
-            props.history.push("/student/feedback");
+          } else if (respData && respData.message) {
+            setValues({ ...values, error: respData.message, loading: false });
+            router.push("/student/feedback");
           } else {
             var arr = save.slice();
             var foundIndex = save.findIndex((x) => x.question === id);
@@ -240,19 +242,17 @@ const Questions = (props) => {
               save: arr,
             });
             var button = document.getElementById("next");
-            console.log(button.value);
-            console.log(index);
-            button.click();
+            if (button) button.click();
           }
         })
         .catch((err) => console.log(err));
     }
   };
+
   const selectOption = (event) => {
     if (isCameraOne === false) {
-      console.log("some");
       setValues({ ...values, error: "Please Turn On Camera!" });
-      document.getElementById("errorText").classList.add("d-block");
+      document.getElementById("errorText")?.classList.add("d-block");
     } else {
       let setOption = event.target.value;
       var arr = mark.slice();
@@ -283,11 +283,11 @@ const Questions = (props) => {
   };
 
   const displayQuestion = (j) => {
+    if (!data || !data[j]) return null;
     const options = [];
     for (const [i, value] of data[j].options.entries()) {
       options.push(
         <li className="py-md-1" key={i}>
-          {" "}
           <input
             className="mx-3"
             type="radio"
@@ -312,7 +312,7 @@ const Questions = (props) => {
             <></>
           )}
         </h5>
-        <input type="text" className="d-none" value={id} readonly />
+        <input type="text" className="d-none" value={id || ""} readOnly />
         <ul style={{ listStyle: "none" }}>{options}</ul>
       </div>
     );
@@ -320,19 +320,17 @@ const Questions = (props) => {
 
   const errorMessage = () => {
     return (
-      <>
-        <Modal show={show} onHide={handleClose} centered>
-          <Modal.Header closeButton>
-            <Modal.Title>Test Portal</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>{error}</Modal.Body>
-          <Modal.Footer>
-            <Button variant="outlined" onClick={handleClose}>
-              Close
-            </Button>
-          </Modal.Footer>
-        </Modal>
-      </>
+      <Modal show={show} onHide={handleClose} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Test Portal</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>{error}</Modal.Body>
+        <Modal.Footer>
+          <Button variant="outlined" onClick={handleClose}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
     );
   };
 
@@ -346,10 +344,10 @@ const Questions = (props) => {
           Are You Sure? Once Submitted You Can Not Attempt Again.
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={handleEndClose}>
+          <Button variant="contained" color="secondary" onClick={handleEndClose}>
             Close
           </Button>
-          <Button variant="primary" onClick={handleRedirect}>
+          <Button variant="contained" color="primary" onClick={handleRedirect}>
             Yes
           </Button>
         </Modal.Footer>
@@ -363,14 +361,14 @@ const Questions = (props) => {
       return { question: item.question, response: item.response };
     });
     endTest({ responses: filteredResponse })
-      .then((data) => {
-        if (data.success === false) {
-          setValues({ ...values, error: data.error.message });
+      .then((respData) => {
+        if (respData && respData.success === false) {
+          setValues({ ...values, error: respData.error.message });
           handleShow();
         } else {
           setValues({ ...values, end: true });
           cleanup();
-          window.location.href = process.env.PUBLIC_URL + "/student/feedback";
+          router.push("/student/feedback");
         }
       })
       .catch((error) => {
@@ -382,7 +380,7 @@ const Questions = (props) => {
     var saveIndex = save.findIndex((x) => x.index === index);
     if (saveIndex !== -1) {
       setValues({ ...values, error: "Can Not Unmark Saved Response!" });
-      document.getElementById("errorText").classList.add("d-block");
+      document.getElementById("errorText")?.classList.add("d-block");
     } else {
       var arr = mark.slice();
       var temp = arr.filter((item) => item.index !== index);
@@ -396,6 +394,7 @@ const Questions = (props) => {
   };
 
   useEffect(() => {
+    if (!authenticated) return;
     const initializeWebcam = async () => {
       try {
         const token = await isAuthenticated();
@@ -403,25 +402,18 @@ const Questions = (props) => {
           setValues(prev => ({ ...prev, error: "Authentication required" }));
           return;
         }
-
-        // Connect to WebSocket
         await webSocketService.connect(token);
-
-        // Start video streaming
         const stream = await webSocketService.startVideoStreaming();
 
         setValues(prev => ({
           ...prev,
           isCameraOne: true,
-          isStreaming: true,
         }));
 
-        // Set video source for display
         if (document.getElementById("cam")) {
           document.getElementById("cam").srcObject = stream;
         }
 
-        // Send periodic updates
         const updateInterval = setInterval(() => {
           webSocketService.sendStreamUpdate({
             testId: localStorage.getItem("testId"),
@@ -431,7 +423,6 @@ const Questions = (props) => {
           });
         }, 5000);
 
-        // Cleanup function
         return () => {
           clearInterval(updateInterval);
           webSocketService.stopVideoStreaming();
@@ -439,53 +430,41 @@ const Questions = (props) => {
       } catch (error) {
         console.error("Webcam initialization error:", error);
         let errorMessage = "Camera access denied or not available";
-
-        if (error.message.includes('Camera access denied')) {
-          errorMessage = "Camera access denied. Please allow camera permissions and refresh the page.";
-        } else if (error.message.includes('No camera found')) {
-          errorMessage = "No camera found. Please connect a camera and try again.";
-        } else if (error.message.includes('Camera is already in use')) {
-          errorMessage = "Camera is already in use by another application. Please close other applications using the camera.";
-        } else if (error.message.includes('HTTPS or localhost')) {
-          errorMessage = "Camera access requires HTTPS or localhost. Please use a secure connection.";
-        } else if (error.message.includes('not supported')) {
-          errorMessage = "Camera access not supported in this browser. Please use a modern browser.";
-        } else if (error.message.includes('WebSocket not connected')) {
-          errorMessage = "Cannot connect to server. Please check your internet connection and try again.";
+        if (error.message) {
+            if (error.message.includes('Camera access denied')) errorMessage = "Camera access denied.";
+            else if (error.message.includes('No camera found')) errorMessage = "No camera found.";
+            else if (error.message.includes('already in use')) errorMessage = "Camera already in use.";
         }
-
         setValues(prev => ({
           ...prev,
           error: errorMessage,
           isCameraOne: false,
-          isStreaming: false,
         }));
       }
     };
 
     initializeWebcam();
 
-    // Cleanup on unmount
     return () => {
       webSocketService.stopVideoStreaming();
       webSocketService.disconnect();
     };
-  }, [hour, minute, second, index]);
+  }, [hour, minute, second, index, authenticated]);
 
   const questionPaper = () => {
     return (
       <>
-        <Paper className="col-md-8 mx-4 p-5">
+        <Paper className="col-md-8 mx-4 p-5" elevation={3}>
           <div className="row" style={{ height: "60vh", overflow: "scroll" }}>
             {displayQuestion(index)}
           </div>
-          <div className="row">
+          <div className="row mt-3">
             <div className="col-md-3">
               <div className="invalid-feedback text-center" id="errorText">
                 {error}
               </div>
             </div>
-            <div className="col-md-9" style={{ textAlign: "-webkit-right" }}>
+            <div className="col-md-9" style={{ textAlign: "right" }}>
               {index === 0 ? null : (
                 <Button
                   className="m-1"
@@ -493,8 +472,7 @@ const Questions = (props) => {
                   value={index - 1}
                   onClick={handleChange("index")}
                 >
-                  {" "}
-                  Previous{" "}
+                  Previous
                 </Button>
               )}
               <Button className="m-1" variant="outlined" onClick={unmark}>
@@ -502,16 +480,10 @@ const Questions = (props) => {
               </Button>
               <Button className="m-1" variant="outlined" onClick={submit}>
                 {loading ? (
-                  <>
-                    <CircularProgress
-                      color="light"
-                      style={{
-                        height: "1rem",
-                        width: "1rem",
-                        marginBottom: "-2px",
-                      }}
-                    />
-                  </>
+                  <CircularProgress
+                    color="inherit"
+                    style={{ height: "1rem", width: "1rem" }}
+                  />
                 ) : (
                   "Submit Answer"
                 )}
@@ -531,8 +503,8 @@ const Questions = (props) => {
           </div>
         </Paper>
         <div className="col-md-3 m-auto">
-          <Paper className="row mb-4">
-            <div className="col-md-12 text-center display-3 my-2">
+          <Paper className="row mb-4" elevation={3}>
+            <div className="col-md-12 text-center display-3 my-2" style={{fontSize: "2rem", padding: "20px 0"}}>
               {hour}:{minute < 10 ? `0${minute}` : minute}:
               {second < 10 ? `0${second}` : second}
             </div>
@@ -548,15 +520,14 @@ const Questions = (props) => {
           </div>
           <Paper
             className="row justify-content-center py-2"
-            style={{
-              backgroundColor: "white",
-              flexFlow: "row wrap",
-            }}
+            elevation={3}
+            style={{ backgroundColor: "white", flexFlow: "row wrap" }}
           >
             {data.map((value, i) => {
               return (
                 <button
-                  className={"" + questionClass(i)}
+                  key={i}
+                  className={questionClass(i)}
                   value={i}
                   style={{ lineHeight: "2rem" }}
                   onClick={handleChange("index")}
@@ -571,16 +542,15 @@ const Questions = (props) => {
     );
   };
 
+  if (authLoading || !authenticated) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}><CircularProgress /></div>;
+
   return (
     <>
       {errorMessage()}
       <section className="student" style={{ height: "100vh", margin: "0" }}>
         <div>
           <NavBar>
-            <div
-              className="container"
-              style={{ height: "70vh", marginTop: "3vh" }}
-            >
+            <div className="container" style={{ height: "70vh", marginTop: "3vh" }}>
               <div className="row h-100">{questionPaper()}</div>
               <Webcam id="cam" style={{ display: "none" }} />
             </div>
@@ -592,15 +562,16 @@ const Questions = (props) => {
   );
 };
 
-export default withRouter(Questions);
+export default Questions;
 
 function cleanup() {
-  localStorage.removeItem("test-token");
-  localStorage.removeItem("data");
-  localStorage.removeItem("index");
-  localStorage.removeItem("questions");
-  localStorage.removeItem("time");
-  localStorage.removeItem("save");
-  localStorage.removeItem("mark");
+  if (typeof window !== 'undefined') {
+      localStorage.removeItem("test-token");
+      localStorage.removeItem("data");
+      localStorage.removeItem("index");
+      localStorage.removeItem("questions");
+      localStorage.removeItem("time");
+      localStorage.removeItem("save");
+      localStorage.removeItem("mark");
+  }
 }
-

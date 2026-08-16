@@ -3,7 +3,7 @@ import { isAuthenticatedAdmin } from "./Auth";
 export const getCount = () => {
   const token = isAuthenticatedAdmin();
   return fetch(
-    process.env.REACT_APP_API_URL + `/admin/count`,
+    process.env.NEXT_PUBLIC_API_URL + `/admin/count`,
     {
       method: "GET",
       headers: {
@@ -22,7 +22,7 @@ export const getCount = () => {
 export const getUsers = (page, limit, search) => {
   const token = isAuthenticatedAdmin();
   return fetch(
-    process.env.REACT_APP_API_URL + `/admin/users?page=` + page + "&limit=" + limit + (search ? "&search=" + search : ""),
+    process.env.NEXT_PUBLIC_API_URL + `/admin/users?page=` + page + "&limit=" + limit + (search ? "&search=" + search : ""),
     {
       method: "GET",
       headers: {
@@ -41,7 +41,7 @@ export const getUsers = (page, limit, search) => {
 export const getResponse = (page, limit, search) => {
   const token = isAuthenticatedAdmin();
   return fetch(
-    process.env.REACT_APP_API_URL + `/admin/responses?page=` + page + "&limit=" + limit + (search ? "&search=" + search : ""),
+    process.env.NEXT_PUBLIC_API_URL + `/admin/responses?page=` + page + "&limit=" + limit + (search ? "&search=" + search : ""),
     {
       method: "GET",
       headers: {
@@ -60,7 +60,7 @@ export const getResponse = (page, limit, search) => {
 export const deleteResponse = (id, user) => {
   const token = isAuthenticatedAdmin();
   return fetch(
-    process.env.REACT_APP_API_URL + `/admin/response/${id}`,
+    process.env.NEXT_PUBLIC_API_URL + `/admin/response/${id}`,
     {
       method: "DELETE",
       headers: {
@@ -79,7 +79,7 @@ export const deleteResponse = (id, user) => {
 export const updateUser = (id, user) => {
   const token = isAuthenticatedAdmin();
   return fetch(
-    process.env.REACT_APP_API_URL + `/admin/user/${id}`,
+    process.env.NEXT_PUBLIC_API_URL + `/admin/user/${id}`,
     {
       method: "PUT",
       headers: {
@@ -99,7 +99,7 @@ export const updateUser = (id, user) => {
 export const deleteUser = (id) => {
   const token = isAuthenticatedAdmin();
   return fetch(
-    process.env.REACT_APP_API_URL + `/admin/user/${id}`,
+    process.env.NEXT_PUBLIC_API_URL + `/admin/user/${id}`,
     {
       method: "DELETE",
       headers: {
@@ -118,7 +118,7 @@ export const deleteUser = (id) => {
 export const addQuestion = (question) => {
   const token = isAuthenticatedAdmin();
   return fetch(
-    process.env.REACT_APP_API_URL + `/admin/add-question`,
+    process.env.NEXT_PUBLIC_API_URL + `/admin/add-question`,
     {
       method: "POST",
       headers: {
@@ -137,7 +137,7 @@ export const addQuestion = (question) => {
 export const addQuestions = (formData) => {
   const token = isAuthenticatedAdmin();
   return fetch(
-    process.env.REACT_APP_API_URL + `/admin/upload-questions`,
+    process.env.NEXT_PUBLIC_API_URL + `/admin/upload-questions`,
     {
       method: "POST",
       headers: {
@@ -157,7 +157,7 @@ export const addQuestions = (formData) => {
 export const getQuestions = (page, limit) => {
   const token = isAuthenticatedAdmin();
   return fetch(
-    process.env.REACT_APP_API_URL + `/admin/questions?page=` + page + "&limit=" + limit,
+    process.env.NEXT_PUBLIC_API_URL + `/admin/questions?page=` + page + "&limit=" + limit,
     {
       method: "GET",
       headers: {
@@ -176,7 +176,7 @@ export const getQuestions = (page, limit) => {
 export const getCategory = () => {
   const token = isAuthenticatedAdmin();
   return fetch(
-    process.env.REACT_APP_API_URL + `/admin/category`,
+    process.env.NEXT_PUBLIC_API_URL + `/admin/category`,
     {
       method: "GET",
       headers: {
@@ -195,7 +195,7 @@ export const getCategory = () => {
 export const addTest = (test) => {
   const token = isAuthenticatedAdmin();
   return fetch(
-    process.env.REACT_APP_API_URL + `/admin/test`,
+    process.env.NEXT_PUBLIC_API_URL + `/admin/test`,
     {
       method: "POST",
       headers: {
@@ -214,7 +214,7 @@ export const addTest = (test) => {
 export const getTests = (page = 1, limit = 10) => {
   const token = isAuthenticatedAdmin();
   return fetch(
-    process.env.REACT_APP_API_URL + `/admin/tests?page=` + page + "&limit=" + limit,
+    process.env.NEXT_PUBLIC_API_URL + `/admin/tests?page=` + page + "&limit=" + limit,
     {
       method: "GET",
       headers: {
@@ -236,7 +236,7 @@ export const updateTest = (id, test) => {
   test.endTime = (new Date(test.endTime)).getTime()
   test.duration = parseInt(test.duration) || 0;
   return fetch(
-    process.env.REACT_APP_API_URL + `/admin/test/${id}`,
+    process.env.NEXT_PUBLIC_API_URL + `/admin/test/${id}`,
     {
       method: "PUT",
       headers: {
@@ -256,7 +256,7 @@ export const updateTest = (id, test) => {
 export const deleteTest = (id) => {
   const token = isAuthenticatedAdmin();
   return fetch(
-    process.env.REACT_APP_API_URL + `/admin/test/${id}`,
+    process.env.NEXT_PUBLIC_API_URL + `/admin/test/${id}`,
     {
       method: "DELETE",
       headers: {
@@ -275,7 +275,7 @@ export const deleteTest = (id) => {
 export const updateQuestion = (id, question) => {
   const token = isAuthenticatedAdmin();
   return fetch(
-    process.env.REACT_APP_API_URL + `/admin/question/${id}`,
+    process.env.NEXT_PUBLIC_API_URL + `/admin/question/${id}`,
     {
       method: "PUT",
       headers: {
@@ -295,7 +295,7 @@ export const updateQuestion = (id, question) => {
 export const deleteQuestion = (id) => {
   const token = isAuthenticatedAdmin();
   return fetch(
-    process.env.REACT_APP_API_URL + `/admin/question/${id}`,
+    process.env.NEXT_PUBLIC_API_URL + `/admin/question/${id}`,
     {
       method: "DELETE",
       headers: {
@@ -314,7 +314,7 @@ export const deleteQuestion = (id) => {
 export const getFeedbacks = (page, limit) => {
   const token = isAuthenticatedAdmin();
   return fetch(
-    process.env.REACT_APP_API_URL + `/admin/feedbacks?page=` + page + "&limit=" + limit,
+    process.env.NEXT_PUBLIC_API_URL + `/admin/feedbacks?page=` + page + "&limit=" + limit,
     {
       method: "GET",
       headers: {

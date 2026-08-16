@@ -1,8 +1,8 @@
 import React from 'react';
-import { makeStyles } from '@material-ui/core/styles';
-import TextField from '@material-ui/core/TextField';
-import { FormControl, Grid, InputLabel, MenuItem, Paper, Select, Typography } from '@material-ui/core';
-import Button from '@material-ui/core/Button';
+import { makeStyles } from '@mui/styles';
+import TextField from '@mui/material/TextField';
+import { FormControl, Grid, InputLabel, MenuItem, Paper, Select, Typography } from '@mui/material';
+import Button from '@mui/material/Button';
 import { addQuestion, addQuestions } from '../../../helper/admin';
 import { toast } from 'react-toastify';
 const useStyles = makeStyles((theme) => ({

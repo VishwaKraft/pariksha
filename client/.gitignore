@@ -24,3 +24,8 @@ yarn-debug.log*
 yarn-error.log*
 
 .env
+
+# Next.js
+/.next/
+/out/
+next-env.d.ts

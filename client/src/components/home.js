@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { withRouter, Link } from "react-router-dom";
+import { useRouter } from "next/router";
+import NextLink from "next/link";
 import { authenticate, isAuthenticated, signin } from "../helper/Auth";
 import { toast } from "react-toastify";
-import GoogleLogin from "react-google-login";
+import { GoogleLogin } from "@react-oauth/google";
 import { Modal } from "react-bootstrap";
-import { CircularProgress } from "@material-ui/core";
+import { CircularProgress } from "@mui/material";
 
-function Home(props) {
+function Home() {
+  const router = useRouter();
   const [values, setValues] = useState({
     email: "",
     password: "",
@@ -22,18 +24,16 @@ function Home(props) {
     async function getAuthStatus() {
       const token = await isAuthenticated();
       if (!!token) {
-        const params = new URLSearchParams(props.location.search);
-        const redirectUrl = params.get('redirect');
+        const redirectUrl = router.query.redirect;
         if (redirectUrl) {
-          props.history.push(redirectUrl);
+          router.push(redirectUrl);
         } else {
-          const { from } = props.location.state || { from: { pathname: "/student/dashboard" } };
-          props.history.push(from);
+          router.push("/student/dashboard");
         }
       }
     }
     getAuthStatus();
-  }, [props.history, props.location.state, props.location.search]);
+  }, [router]);
 
   const handleChange = (name) => (event) => {
     setValues({ ...values, error: false, [name]: event.target.value });
@@ -57,13 +57,11 @@ function Home(props) {
         } else {
           authenticate(data.data, () => {
             toast.success("Welcome back!");
-            const params = new URLSearchParams(props.location.search);
-            const redirectUrl = params.get('redirect');
+            const redirectUrl = router.query.redirect;
             if (redirectUrl) {
-              props.history.push(redirectUrl);
+              router.push(redirectUrl);
             } else {
-              const { from } = props.location.state || { from: { pathname: "/student/dashboard" } };
-              props.history.push(from);
+              router.push("/student/dashboard");
             }
           });
         }
@@ -71,13 +69,13 @@ function Home(props) {
       .catch((err) => setValues({ ...values, error: "An unexpected error occurred.", loading: false }));
   };
 
-  const handleGoogleLogin = async (googleData) => {
+  const handleGoogleLogin = async (credentialResponse) => {
     try {
       const res = await fetch(
-        process.env.REACT_APP_API_URL + "/api/v1/auth/google",
+        process.env.NEXT_PUBLIC_API_URL + "/api/v1/auth/google",
         {
           method: "POST",
-          body: JSON.stringify({ token: googleData.tokenId }),
+          body: JSON.stringify({ token: credentialResponse.credential }),
           headers: { "Content-Type": "application/json" },
         }
       );
@@ -88,13 +86,11 @@ function Home(props) {
       }
       authenticate(data.data, () => {
         toast.success("Welcome back!");
-        const params = new URLSearchParams(props.location.search);
-        const redirectUrl = params.get('redirect');
+        const redirectUrl = router.query.redirect;
         if (redirectUrl) {
-          props.history.push(redirectUrl);
+          router.push(redirectUrl);
         } else {
-          const { from } = props.location.state || { from: { pathname: "/student/dashboard" } };
-          props.history.push(from);
+          router.push("/student/dashboard");
         }
       });
     } catch {
@@ -330,10 +326,6 @@ function Home(props) {
           color: #9ca3af; white-space: nowrap;
         }
 
-        .google-btn-wrapper { width: 100%; }
-        .google-btn-wrapper > div { width: 100% !important; }
-        .google-btn-wrapper > div > div { width: 100% !important; border-radius: 12px !important; }
-
         .footer-note {
           text-align: center;
           margin-top: 28px;
@@ -466,21 +458,15 @@ function Home(props) {
             <hr /><span>or continue with</span><hr />
           </div>
 
-          <div className="google-btn-wrapper">
-            <GoogleLogin
-              clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}
-              buttonText="Sign in with Google"
-              onSuccess={handleGoogleLogin}
-              onFailure={handleGoogleLogin}
-              cookiePolicy="single_host_origin"
-              theme="light"
-              style={{ width: "100%", borderRadius: "12px" }}
-            />
-          </div>
+          <GoogleLogin
+            onSuccess={handleGoogleLogin}
+            onError={() => toast.error("Google login failed")}
+            width="100%"
+          />
 
           <div className="footer-note">
             Admin?&nbsp;
-            <Link to="/admin">Sign in to admin panel →</Link>
+            <NextLink href="/admin">Sign in to admin panel →</NextLink>
           </div>
         </div>
       </div>
@@ -496,4 +482,4 @@ function Home(props) {
   );
 }
 
-export default withRouter(Home);
+export default Home;

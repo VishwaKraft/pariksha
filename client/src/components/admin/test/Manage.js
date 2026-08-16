@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogContentText, TextField, DialogActions, Button } from '@material-ui/core';
-import MaterialTable from 'material-table';
+import { Dialog, DialogTitle, DialogContent, DialogContentText, TextField, DialogActions, Button } from '@mui/material';
+import MaterialTable from "@material-table/core";
 import { deleteTest, getTests, updateTest, getQuestions } from '../../../helper/admin';
 import { toast } from 'react-toastify';
 

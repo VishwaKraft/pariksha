@@ -1,17 +1,17 @@
 import React, { useEffect } from 'react';
 import clsx from 'clsx';
-import { makeStyles } from '@material-ui/core/styles';
-import CssBaseline from '@material-ui/core/CssBaseline';
-import Drawer from '@material-ui/core/Drawer';
-import AppBar from '@material-ui/core/AppBar';
-import Toolbar from '@material-ui/core/Toolbar';
-import Typography from '@material-ui/core/Typography';
-import IconButton from '@material-ui/core/IconButton';
-import Container from '@material-ui/core/Container';
-import MenuIcon from '@material-ui/icons/Menu';
-import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
-import ExitToAppIcon from '@material-ui/icons/ExitToApp';
-import { withRouter } from 'react-router';
+import { makeStyles } from '@mui/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import Drawer from '@mui/material/Drawer';
+import AppBar from '@mui/material/AppBar';
+import Toolbar from '@mui/material/Toolbar';
+import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
+import Container from '@mui/material/Container';
+import MenuIcon from '@mui/icons-material/Menu';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ExitToAppIcon from '@mui/icons-material/ExitToApp';
+import { withRouter } from 'next/router';
 import SideNav from './SideNav';
 
 const drawerWidth = 240;
@@ -108,18 +108,18 @@ function Dashboard(props) {
     localStorage.removeItem("admin-token");
     localStorage.removeItem("admin-name");
     localStorage.removeItem("admin-email");
-    props.history.push('/admin');
+    props.router.push('/admin');
   };
 
   useEffect(() => {
     async function checkToken() {
       const token = localStorage.getItem("admin-token");
       if (!token) {
-        props.history.push('/admin');
+        props.router.push('/admin');
       } 
     }
     checkToken();
-  }, [props.history]);
+  }, [props.router]);
 
   return (
     <div className={classes.root}>

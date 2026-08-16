@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
-import { makeStyles } from '@material-ui/core/styles';
-import TextField from '@material-ui/core/TextField';
-import { Box, Chip, FormControl, Input, InputLabel, MenuItem, Paper, Select, Typography, useTheme } from '@material-ui/core';
-import Button from '@material-ui/core/Button';
+import { makeStyles } from '@mui/styles';
+import TextField from '@mui/material/TextField';
+import { Box, Chip, FormControl, Input, InputLabel, MenuItem, Paper, Select, Typography, useTheme } from '@mui/material';
+import Button from '@mui/material/Button';
 import { addTest, getCategory } from '../../../helper/admin';
 import { toast } from 'react-toastify';
 
