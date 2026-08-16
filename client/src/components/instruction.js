@@ -21,19 +21,6 @@ const useStyles = makeStyles((theme) => ({
   formControl: {
     margin: theme.spacing ? theme.spacing(1) : 8,
     minWidth: 200,
-  },
-  premiumPaper: {
-    backgroundColor: '#171717',
-    color: '#ffffff',
-    border: '1px solid #333',
-  },
-  premiumButton: {
-    backgroundColor: '#ffffff',
-    color: '#000000',
-    fontWeight: 'bold',
-    '&:hover': {
-      backgroundColor: '#e6e6e6',
-    }
   }
 }));
 
@@ -248,7 +235,6 @@ const Instruction = () => {
     return (
       <div>
         <NavBar>
-        <div style={{ backgroundColor: '#0a0a0a', minHeight: '100vh', paddingBottom: '3rem', paddingTop: '2rem', color: '#ffffff' }}>
         <Container maxWidth="lg">
           <Box my={4}>
             <Grid
@@ -258,8 +244,8 @@ const Instruction = () => {
               alignItems="flex-start"
               spacing={4}>
               <Grid item xs={12} md={6}>
-                <Paper className={`${classes.pl} ${classes.premiumPaper}`}>
-                  <h1 style={{ color: '#fff' }}>Instruction</h1>
+                <Paper className={classes.pl}>
+                  <h1>Instruction</h1>
                   <ul>
                     <li>Have a stable internet connection.</li>
                     <li>This is a Web Proctored Exam. Kindly allow camera Permission</li>
@@ -294,7 +280,7 @@ const Instruction = () => {
                 </Paper>
               </Grid>
               <Grid item xs={12} md={6}>
-                <Paper className={`${classes.pr} ${classes.premiumPaper}`}>
+                <Paper className={classes.pr}>
                   <div className="row h-20">
                     <div className="col-md-12 my-3 text-center display-3">
                       <span id="clock" style={{fontSize: "2rem"}}>
@@ -314,14 +300,13 @@ const Instruction = () => {
                       style={{ textAlign: "-webkit-center", display: "flex", justifyContent: "center" }}
                     >
                       <FormControl className={classes.formControl}>
-                        {optional.length !== 0 ? <InputLabel id="demo-simple-select-outlined-label" style={{ color: '#fff' }}>Language</InputLabel> : <></>}
+                        {optional.length !== 0 ? <InputLabel id="demo-simple-select-outlined-label">Language</InputLabel> : <></>}
                         {optional.length !== 0 ? <Select
                           labelId="demo-simple-select-outlined-label"
                           id="demo-simple-select-outlined"
                           value={lang || ""}
                           onChange={change}
                           label="Language"
-                          style={{ color: '#fff', borderBottom: '1px solid #fff' }}
                         >
                           {optional.map((item, idx) => <MenuItem key={`lang-${idx}`} value={item}>{item.toUpperCase()}</MenuItem>)}
                         </Select> : <></>}
@@ -331,8 +316,7 @@ const Instruction = () => {
                   <div className="row">
                     <div className="col-md-12 mb-2 text-center" style={{ display: "flex", justifyContent: "center" }}>
                       <Button
-                        variant="contained"
-                        className={classes.premiumButton}
+                        variant="contained" color="primary"
                         onClick={handleRedirect}
                       >
                         {loading ? (
@@ -379,7 +363,6 @@ const Instruction = () => {
             </Grid>
           </Box>
         </Container>
-        </div>
         </NavBar>
       </div>
     );

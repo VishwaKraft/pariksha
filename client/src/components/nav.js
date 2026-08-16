@@ -44,8 +44,7 @@ const useStyles = makeStyles((theme) => ({
     flexGrow: 1
   },
   appBar: {
-    backgroundColor: "#0a0a0a",
-    borderBottom: "1px solid #333",
+    backgroundColor: "#ffffff",
     zIndex: theme.zIndex.drawer + 1,
     transition: theme.transitions.create(["width", "margin"], {
       easing: theme.transitions.easing.sharp,
@@ -71,8 +70,7 @@ const useStyles = makeStyles((theme) => ({
     flexGrow: 1,
   },
   drawerClose: {
-    backgroundColor: "#171717",
-    borderRight: "1px solid #333",
+    backgroundColor: theme.palette.primary.main,
     transition: theme.transitions.create("width", {
       easing: theme.transitions.easing.sharp,
       duration: theme.transitions.duration.leavingScreen,
@@ -173,7 +171,7 @@ function BackToTop(props) {
             </div>
             <ul className="navbar-nav me-2 mb-2 mb-lg-0">
               <li className="nav-item dropdown">
-              {!userProfile.photo ? <div className="nav-link bg-light text-dark rounded-circle text-center" style={{ width: "2.5rem", height: "2.5rem", fontSize: "1.2rem", display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', border: '1px solid #333' }} id="navbarDropdown" role="button" onClick={toggleDropdown} aria-expanded={dropdownOpen ? "true" : "false"}>
+              {!userProfile.photo ? <div className="nav-link  bg-primary text-light rounded-circle text-center" style={{ width: "2.5rem", height: "2.5rem", fontSize: "1.2rem", display: 'flex', alignItems: 'center', justifyContent: 'center' }} id="navbarDropdown" role="button" onClick={toggleDropdown} aria-expanded={dropdownOpen ? "true" : "false"}>
                 <p style={{margin: 0}}>{userProfile.initials}</p>
               </div>
               :

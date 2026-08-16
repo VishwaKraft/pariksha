@@ -14,34 +14,6 @@ const useStyles = makeStyles((theme) => ({
   card: {
     maxWidth: 345,
     minWidth: 345,
-    backgroundColor: '#171717',
-    color: '#ffffff',
-    border: '1px solid #333',
-    transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-    '&:hover': {
-      transform: 'translateY(-5px)',
-      boxShadow: '0 8px 24px rgba(255,255,255,0.1)',
-    },
-  },
-  cardMedia: {
-    filter: 'grayscale(100%)',
-    transition: 'filter 0.3s ease',
-  },
-  cardMediaHover: {
-    '&:hover $cardMedia': {
-      filter: 'grayscale(0%)',
-    }
-  },
-  btnStart: {
-    backgroundColor: '#ffffff',
-    color: '#000000',
-    fontWeight: 'bold',
-    '&:hover': {
-      backgroundColor: '#e6e6e6',
-    }
-  },
-  btnEnded: {
-    color: '#666666',
   }
 }));
 
@@ -82,7 +54,6 @@ export default function Dashboard() {
   return (
     <React.Fragment>
       <NavBar>
-        <div style={{ backgroundColor: '#0a0a0a', minHeight: '100vh', paddingBottom: '3rem' }}>
         <Grid direction="column">
           {
             values.filter(item => (new Date(item.endTime)).getTime() > ((new Date()).getTime())).length > 0 ?
@@ -102,24 +73,23 @@ export default function Dashboard() {
                       .map((item) => {
                         return (
                           <Grid item key={item._id}>
-                            <Card className={`${classes.card} ${classes.cardMediaHover}`}>
+                            <Card className={classes.card}>
                               <CardActionArea>
                                 <CardMedia
-                                  className={classes.cardMedia}
                                   component="img"
-                                  alt="Test Banner"
+                                  alt="Contemplative Reptile"
                                   height="140"
-                                  image={item.testUrl ? item.testUrl : "https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=800&q=80"}
-                                  title="Test Banner"
+                                  image={item.testUrl ? item.testUrl : "https://png.pngtree.com/background/20210710/original/pngtree-recruitment-background-banner-picture-image_1037995.jpg"}
+                                  title="Contemplative Reptile"
                                 />
                                 <CardContent>
-                                  <Typography gutterBottom variant="h5" component="h2" style={{ color: '#fff', fontWeight: 600 }}>
+                                  <Typography gutterBottom variant="h5" component="h2">
                                     {item.title.toUpperCase()}
                                   </Typography>
-                                  {item.description ? <Typography variant="body2" style={{ color: '#a3a3a3' }} component="p">
+                                  {item.description ? <Typography variant="body2" color="textSecondary" component="p">
                                     {item.description.toUpperCase()}
                                   </Typography> : <></>}
-                                  <Typography variant="body2" style={{ color: '#a3a3a3', marginTop: '0.5rem' }} component="p">
+                                  <Typography variant="body2" color="textSecondary" component="p">
                                     Start Time : {(new Date(item.startTime)).toLocaleString(undefined, {
                                       day: 'numeric',
                                       year: 'numeric',
@@ -129,16 +99,16 @@ export default function Dashboard() {
                                       second: 'numeric',
                                     })}
                                   </Typography>
-                                  <Typography variant="body2" style={{ color: '#a3a3a3' }} component="p">
+                                  <Typography variant="body2" color="textSecondary" component="p">
                                     Duration : {item.duration.hour + "h " + item.duration.minute + "m"}
                                   </Typography>
                                 </CardContent>
                               </CardActionArea>
                               <CardActions>
                                 {
-                                  ((new Date(item.endTime)).getTime()) > ((new Date()).getTime()) ? <Button size="small" className={classes.btnStart} variant="contained" onClick={() => handleSelect(item._id)}>
+                                  ((new Date(item.endTime)).getTime()) > ((new Date()).getTime()) ? <Button size="small" style={{ color: "blue" }} onClick={() => handleSelect(item._id)}>
                                     Start
-                                  </Button> : <Button size="small" className={classes.btnEnded} disabled >
+                                  </Button> : <Button size="small" color="inherit" disabled >
                                     Ended
                                   </Button>
                                 }
@@ -172,24 +142,23 @@ export default function Dashboard() {
                     .map((item) => {
                       return (
                         <Grid item key={item._id}>
-                          <Card className={`${classes.card} ${classes.cardMediaHover}`}>
+                          <Card className={classes.card}>
                             <CardActionArea>
                               <CardMedia
-                                className={classes.cardMedia}
                                 component="img"
-                                alt="Test Banner"
+                                alt="Contemplative Reptile"
                                 height="140"
-                                image={item.testUrl ? item.testUrl : "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=800&q=80"}
-                                title="Test Banner"
+                                image={item.testUrl ? item.testUrl : "http://validata-software.com/images/blog/wp-content/uploads/2017/02/service-automation_banner.png"}
+                                title="Contemplative Reptile"
                               />
                               <CardContent>
-                                <Typography gutterBottom variant="h5" component="h2" style={{ color: '#fff', fontWeight: 600 }}>
+                                <Typography gutterBottom variant="h5" component="h2">
                                   {item.title.toUpperCase()}
                                 </Typography>
-                                {item.description ? <Typography variant="body2" style={{ color: '#a3a3a3' }} component="p">
+                                {item.description ? <Typography variant="body2" color="textSecondary" component="p">
                                   {item.description.toUpperCase()}
                                 </Typography> : <></>}
-                                <Typography variant="body2" style={{ color: '#a3a3a3', marginTop: '0.5rem' }} component="p">
+                                <Typography variant="body2" color="textSecondary" component="p">
                                   Start Time : {(new Date(item.startTime)).toLocaleString(undefined, {
                                     day: 'numeric',
                                     year: 'numeric',
@@ -199,13 +168,13 @@ export default function Dashboard() {
                                     second: 'numeric',
                                   })}
                                 </Typography>
-                                <Typography variant="body2" style={{ color: '#a3a3a3' }} component="p">
+                                <Typography variant="body2" color="textSecondary" component="p">
                                   Duration : {item.duration.hour + "h " + item.duration.minute + "m"}
                                 </Typography>
                               </CardContent>
                             </CardActionArea>
                             <CardActions>
-                              <Button size="small" className={classes.btnEnded} disabled >
+                              <Button size="small" color="inherit" disabled >
                                 Ended
                               </Button>
                             </CardActions>
@@ -218,7 +187,6 @@ export default function Dashboard() {
             </Container>
             : <></>}
         </Grid>
-        </div>
       </NavBar>
     </React.Fragment >
   );
