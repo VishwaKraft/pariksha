@@ -1,4 +1,5 @@
 /** @type {import('next').NextConfig} */
+console.log("Client Environment Variables at Startup:", process.env);
 const nextConfig = {
   reactStrictMode: true,
   output: 'export',
