@@ -99,7 +99,7 @@ const WebcamMonitor = () => {
   useEffect(() => {
     const token = isAuthenticatedAdmin();
 
-    const apiUrl = process.env.REACT_APP_API_URL || 'http://localhost:3000';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
     // If the API URL ends with /api, strip it out to connect to the root namespace
     const socketUrl = apiUrl.endsWith('/api') ? apiUrl.slice(0, -4) : apiUrl;
     console.log('Connecting to monitoring server at:', socketUrl);

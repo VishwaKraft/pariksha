@@ -28,7 +28,7 @@ export default function BasicTextFields() {
           }
         }
 
-        const response = await fetch(`${process.env.REACT_APP_EMAIL_API_URL}/api/email-events/trigger/pariksha-invite`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_EMAIL_API_URL}/api/email-events/trigger/pariksha-invite`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
