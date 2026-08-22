@@ -147,3 +147,17 @@ exports.deleteTest = async (req, res) => {
     ));
   }
 };
+
+exports.getPublicTests = async (req, res) => {
+  try {
+    var results = await Test.find({}).where('endTime').gt(Date.now());
+    res.status(200).json(createSuccessResponse(results, "Public tests retrieved"));
+  } catch (error) {
+    res.status(500).json(createErrorResponse(
+      errorCodes.INTERNAL_ERROR,
+      "Failed to retrieve public tests",
+      error.message,
+      500
+    ));
+  }
+};
