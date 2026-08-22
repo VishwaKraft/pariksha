@@ -241,7 +241,7 @@ const Instruction = () => {
                 container
                 direction="row"
                 justifyContent="center"
-                alignItems="stretch"
+                alignItems="center"
                 style={{ flexFlow: 'nowrap' }}
                 spacing={4}>
                 <Grid item xs={12} sm={6}>
