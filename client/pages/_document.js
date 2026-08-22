@@ -9,6 +9,7 @@ export default class MyDocument extends Document {
         <Head>
           <meta charSet="utf-8" />
           <meta name="description" content="Pariksha – Secure, AI-monitored online exams with real-time webcam proctoring." />
+          <meta name="google-site-verification" content="WFt2Q2dW5vEDcjuEZtZL-XhX_v0p2tFoJz4dBEMCOGE" />
           <link rel="icon" href="/favicon.ico" />
           <link
             rel="stylesheet"
