@@ -9,9 +9,15 @@ const client = new OAuth2Client(process.env.CLIENT_ID)
 const User = require("../model/User");
 const jwt = require("jsonwebtoken");
 const { createErrorResponse, createSuccessResponse, errorCodes } = require("../utils/errorHandler");
+const testController = require("../controller/testController");
 
 
 // const auth = require('../middleware/auth')
+
+// @route   GET /public/tests
+// @desc    Get active public tests for sitemap
+// @access  Public
+router.get("/public/tests", testController.getPublicTests);
 
 // @route   POST /register
 // @desc    Register user and return user object

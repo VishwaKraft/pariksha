@@ -171,19 +171,25 @@ function BackToTop(props) {
             </div>
             <ul className="navbar-nav me-2 mb-2 mb-lg-0">
               <li className="nav-item dropdown">
-                {!userProfile.photo ? <div className="nav-link  bg-primary text-light rounded-circle text-center" style={{ width: "2.5rem", height: "2.5rem", fontSize: "1.2rem", display: 'flex', alignItems: 'center', justifyContent: 'center' }} id="navbarDropdown" role="button" onClick={toggleDropdown} aria-expanded={dropdownOpen ? "true" : "false"}>
-                  <p style={{ margin: 0 }}>{userProfile.initials}</p>
-                </div>
-                  :
-                  <img alt="profilePhoto" src={userProfile.photo} className="text-light rounded-circle" style={{ width: "2.5rem", height: "2.5rem", objectFit: 'cover', cursor: 'pointer' }} id="navbarDropdown" role="button" onClick={toggleDropdown} aria-expanded={dropdownOpen ? "true" : "false"} />
-                }
-                <ul className={`dropdown-menu dropdown-menu-end ${dropdownOpen ? 'show' : ''}`} aria-labelledby="navbarDropdown" style={{ position: 'absolute', right: 0, left: 'auto' }}>
-                  <li><span className="dropdown-item" >{userProfile.email}</span></li>
-                  <li><hr className="dropdown-divider" /></li>
-                  <li><span className="dropdown-item" >
-                    <button className="dropdown-item" onClick={handleLogout} style={{ cursor: 'pointer', background: 'none', border: 'none', display: 'flex', alignItems: 'center' }}> <ExitToAppIcon style={{ marginRight: '8px' }} /> Logout </button></span>
-                  </li>
-                </ul>
+                {!userProfile.email && !userProfile.initials && !userProfile.photo ? (
+                  <button className="btn btn-primary" onClick={props.onLoginClick} style={{ marginTop: "4px" }}>Login</button>
+                ) : (
+                  <>
+                    {!userProfile.photo ? <div className="nav-link  bg-primary text-light rounded-circle text-center" style={{ width: "2.5rem", height: "2.5rem", fontSize: "1.2rem", display: 'flex', alignItems: 'center', justifyContent: 'center' }} id="navbarDropdown" role="button" onClick={toggleDropdown} aria-expanded={dropdownOpen ? "true" : "false"}>
+                      <p style={{ margin: 0 }}>{userProfile.initials}</p>
+                    </div>
+                      :
+                      <img alt="profilePhoto" src={userProfile.photo} className="text-light rounded-circle" style={{ width: "2.5rem", height: "2.5rem", objectFit: 'cover', cursor: 'pointer' }} id="navbarDropdown" role="button" onClick={toggleDropdown} aria-expanded={dropdownOpen ? "true" : "false"} />
+                    }
+                    <ul className={`dropdown-menu dropdown-menu-end ${dropdownOpen ? 'show' : ''}`} aria-labelledby="navbarDropdown" style={{ position: 'absolute', right: 0, left: 'auto' }}>
+                      <li><span className="dropdown-item" >{userProfile.email}</span></li>
+                      <li><hr className="dropdown-divider" /></li>
+                      <li><span className="dropdown-item" >
+                        <button className="dropdown-item" onClick={handleLogout} style={{ cursor: 'pointer', background: 'none', border: 'none', display: 'flex', alignItems: 'center' }}> <ExitToAppIcon style={{ marginRight: '8px' }} /> Logout </button></span>
+                      </li>
+                    </ul>
+                  </>
+                )}
               </li>
             </ul>
           </Toolbar>

@@ -26,7 +26,16 @@ const useStyles = makeStyles((theme) => ({
 
 const Instruction = () => {
   const router = useRouter();
-  const { id } = router.query;
+  const { id: rawId } = router.query;
+  let id = rawId;
+  if (rawId && rawId.endsWith("-testid")) {
+    const parts = rawId.split("-");
+    if (parts.length >= 3) {
+      id = parts[parts.length - 2];
+    } else {
+      id = rawId.replace("-testid", "");
+    }
+  }
   const { loading: authLoading, authenticated } = useStudentAuth();
 
   const [testLoaded, setTestLoaded] = useState(false);

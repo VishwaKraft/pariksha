@@ -3,12 +3,13 @@ import { makeStyles } from '@mui/styles';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import { Card, CardActions, CardContent, Typography, Button, CardActionArea, CardMedia, Grid } from '@mui/material';
-import { getTests } from '../helper/Test';
+import { getPublicTests } from '../helper/Test';
 import NavBar from "./nav";
 import { useRouter } from 'next/router';
 import { isAuthenticated } from '../helper/Auth';
 import useStudentAuth from '../hooks/useStudentAuth';
 import CircularProgress from "@mui/material/CircularProgress";
+import LoginModal from './LoginModal';
 
 const useStyles = makeStyles((theme) => ({
   card: {
@@ -22,38 +23,54 @@ export default function Dashboard() {
   const [values, setValues] = useState([]);
   const router = useRouter();
   const { loading: authLoading, authenticated } = useStudentAuth();
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [pendingTestId, setPendingTestId] = useState(null);
+  const [fetchingTests, setFetchingTests] = useState(true);
 
   useEffect(() => {
-    if (authenticated) {
-      if (typeof window !== 'undefined' && localStorage.getItem("test-token")) {
-         router.push("/student/questions");
-         return;
+    getPublicTests().then(async result => {
+      if (result && result.success === true) {
+        setValues(result.data.results || result.data || []);
       }
-      
-      getTests().then(async result => {
-        if (result && result.success === true) {
-          setValues(result.data.results)
-        } else {
-          localStorage.removeItem("token")
-          router.push('/');
-        }
-      })
-    }
+      setFetchingTests(false);
+    }).catch(err => {
+      console.error(err);
+      setFetchingTests(false);
+    });
   }, [router, authenticated])
 
-  const handleSelect = (id) => {
+  const navigateToTest = (id) => {
     var test = values.find(i => i._id === id)
     localStorage.setItem("test", JSON.stringify(test))
-    router.push("/student/test/" + id)
+    var testNameSlug = test.title ? test.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'test';
+    router.push(`/student/test/${testNameSlug}-${id}-testid`)
   }
 
-  if (authLoading || !authenticated) {
+  const handleSelect = (id) => {
+    if (!authenticated) {
+      setPendingTestId(id);
+      setShowLoginModal(true);
+    } else {
+      navigateToTest(id);
+    }
+  }
+
+  const handleLoginSuccess = () => {
+    setShowLoginModal(false);
+    if (pendingTestId) {
+      navigateToTest(pendingTestId);
+    } else {
+      router.reload(); // Reload to update auth state if no test was pending
+    }
+  }
+
+  if (fetchingTests || authLoading) {
     return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}><CircularProgress /></div>;
   }
 
   return (
     <React.Fragment>
-      <NavBar>
+      <NavBar onLoginClick={() => setShowLoginModal(true)}>
         <Grid direction="column">
           {
             values.filter(item => (new Date(item.endTime)).getTime() > ((new Date()).getTime())).length > 0 ?
@@ -188,6 +205,11 @@ export default function Dashboard() {
             : <></>}
         </Grid>
       </NavBar>
+      <LoginModal 
+        open={showLoginModal} 
+        onClose={() => setShowLoginModal(false)} 
+        onSuccess={handleLoginSuccess} 
+      />
     </React.Fragment >
   );
 }

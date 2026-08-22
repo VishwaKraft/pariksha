@@ -150,3 +150,18 @@ export const selectTest = async (id) => {
     })
     .catch((err) => err);
 };
+
+export const getPublicTests = async () => {
+  return fetch(
+    process.env.NEXT_PUBLIC_API_URL + `/public/tests`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+    }
+  )
+    .then((response) => response.json())
+    .catch((err) => err);
+};

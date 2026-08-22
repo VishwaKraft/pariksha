@@ -178,7 +178,8 @@ export default function BasicTextFields() {
             onClick: (event, rowData) => {
               const currentPath = window.location.pathname;
               const basePath = currentPath.replace(/\/admin\/test\/manage.*$/, '');
-              const link = window.location.origin + basePath + "/student/test/" + rowData._id;
+              const testNameSlug = rowData.title ? rowData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') : 'test';
+              const link = window.location.origin + basePath + "/student/test/" + testNameSlug + "-" + rowData._id + "-testid";
               setCurrentShareLink(link);
               setCurrentTestDetails(rowData);
               setShareModalOpen(true);
