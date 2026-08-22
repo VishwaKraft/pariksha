@@ -251,7 +251,7 @@ const Instruction = () => {
                       <li>Have a stable internet connection.</li>
                       <li>This is a Web Proctored Exam. Kindly allow camera Permission</li>
                       <li>Do Not "Refresh" Or "Close" this tab or else you will be logged out.</li>
-                      <li>The test button will be active at {startTime} after which you will lose time for the test.</li>
+                      <li>The test button will be active at {startTime}.</li>
                       <li>
                         There would be questions for each
                         {<ul>
