@@ -280,7 +280,7 @@ const Instruction = () => {
                     </ul>
                   </Paper>
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid item xs={12} sm={6} style={{ alignContent: 'center' }}>
                   <Paper className={classes.pr} style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                     <div className="row h-20">
                       <div className="col-md-12 my-3 text-center display-3">
