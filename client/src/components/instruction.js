@@ -28,7 +28,7 @@ const Instruction = () => {
   const router = useRouter();
   const { id } = router.query;
   const { loading: authLoading, authenticated } = useStudentAuth();
-  
+
   const [testLoaded, setTestLoaded] = useState(false);
   const [values, setValues] = useState({
     hour: 0,
@@ -67,7 +67,7 @@ const Instruction = () => {
       if (typeof window !== 'undefined') {
         testObj = JSON.parse(localStorage.getItem("test"));
       }
-    } catch (e) {}
+    } catch (e) { }
 
     const initializeTest = (testData) => {
       localStorage.setItem("test", JSON.stringify(testData));
@@ -131,22 +131,22 @@ const Instruction = () => {
               }
             })
             .catch((err) => {
-                console.log(err);
-                setValues({ ...values, error: "Network Error", loading: false });
+              console.log(err);
+              setValues({ ...values, error: "Network Error", loading: false });
             });
         } else {
           setValues({ ...values, error: result?.error?.message || "Failed to get token", loading: false });
         }
       }).catch((err) => {
-          console.log(err);
-          setValues({ ...values, error: "Network Error", loading: false });
+        console.log(err);
+        setValues({ ...values, error: "Network Error", loading: false });
       });
     }
   };
 
   useEffect(() => {
     if (didRedirect === true && loading === false && typeof window !== 'undefined') {
-        router.push("/student/questions");
+      router.push("/student/questions");
     }
   }, [didRedirect, loading, router]);
 
@@ -218,13 +218,13 @@ const Instruction = () => {
 
   useEffect(() => {
     if (authenticated) {
-        initializeWebcam();
+      initializeWebcam();
     }
     return function cleanup() {
       webSocketService.stopVideoStreaming();
       if (typeof window !== 'undefined') {
-          localStorage.removeItem("optional");
-          localStorage.removeItem("mandatoryCategory");
+        localStorage.removeItem("optional");
+        localStorage.removeItem("mandatoryCategory");
       }
     };
   }, [id, initializeWebcam, authenticated]);
@@ -235,134 +235,135 @@ const Instruction = () => {
     return (
       <div>
         <NavBar>
-        <Container maxWidth="lg">
-          <Box my={4}>
-            <Grid
-              container
-              direction="row"
-              justifyContent="center"
-              alignItems="stretch"
-              spacing={4}>
-              <Grid item xs={12} sm={6}>
-                <Paper className={classes.pl} style={{ height: '100%' }}>
-                  <h1>Instruction</h1>
-                  <ul>
-                    <li>Have a stable internet connection.</li>
-                    <li>This is a Web Proctored Exam. Kindly allow camera Permission</li>
-                    <li>Do Not "Refresh" Or "Close" this tab or else you will be logged out.</li>
-                    <li>The test button will be active at {startTime} after which you will lose time for the test.</li>
-                    <li>
-                      There would be questions for each
-                      {<ul>
-                        {
-                          mandatory.map((categ, idx) => (
-                            <li key={`man-${idx}`}>
-                              {categ.toUpperCase()}
-                            </li>
-                          ))
-                        }
-                        {optional.length > 0 ? (<li> Any One : {
-                          optional.map((categ, idx) => (
-                            <span key={`opt-${idx}`}>{categ.toUpperCase()} &nbsp;</span>
-                          ))
-                        }</li>) : <></>}
-                      </ul>}
+          <Container maxWidth="lg">
+            <Box my={4}>
+              <Grid
+                container
+                direction="row"
+                justifyContent="center"
+                alignItems="stretch"
+                style={{ flexFlow: 'nowrap' }}
+                spacing={4}>
+                <Grid item xs={12} sm={6}>
+                  <Paper className={classes.pl} style={{ height: '100%' }}>
+                    <h1>Instruction</h1>
+                    <ul>
+                      <li>Have a stable internet connection.</li>
+                      <li>This is a Web Proctored Exam. Kindly allow camera Permission</li>
+                      <li>Do Not "Refresh" Or "Close" this tab or else you will be logged out.</li>
+                      <li>The test button will be active at {startTime} after which you will lose time for the test.</li>
+                      <li>
+                        There would be questions for each
+                        {<ul>
+                          {
+                            mandatory.map((categ, idx) => (
+                              <li key={`man-${idx}`}>
+                                {categ.toUpperCase()}
+                              </li>
+                            ))
+                          }
+                          {optional.length > 0 ? (<li> Any One : {
+                            optional.map((categ, idx) => (
+                              <span key={`opt-${idx}`}>{categ.toUpperCase()} &nbsp;</span>
+                            ))
+                          }</li>) : <></>}
+                        </ul>}
 
-                    </li>
-                    <li>Test will be auto submit after the time expires.</li>
-                    <li>Switching tabs is strictly prohibited and would be considered in the final evaluation.</li>
-                    <li>Answers once submitted cannot be unmarked but can be modified.</li>
-                    <li>Marked answers will not be Submitted at the End of test.</li>
-                    <li>
-                      <b>You will be awarded 1 mark for Correct Answer and there is no negative marking.</b>
-                    </li>
-                  </ul>
-                </Paper>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Paper className={classes.pr} style={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                  <div className="row h-20">
-                    <div className="col-md-12 my-3 text-center display-3">
-                      <span id="clock" style={{fontSize: "2rem"}}>
-                        {hour}:{minute < 10 ? `0${minute}` : minute}:
-                        {second < 10 ? `0${second}` : second}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="row">
-                    <div className="col-12" style={{ display: 'flex', justifyContent: 'center' }}>
-                      <Webcam id="cam" style={{ width: "100%", maxWidth: "320px", height: "240px", margin: "0 auto", display: "block" }} />
-                    </div>
-                  </div>
-                  <div className="row">
-                    <div
-                      className="col-md-12"
-                      style={{ textAlign: "-webkit-center", display: "flex", justifyContent: "center" }}
-                    >
-                      <FormControl className={classes.formControl}>
-                        {optional.length !== 0 ? <InputLabel id="demo-simple-select-outlined-label">Language</InputLabel> : <></>}
-                        {optional.length !== 0 ? <Select
-                          labelId="demo-simple-select-outlined-label"
-                          id="demo-simple-select-outlined"
-                          value={lang || ""}
-                          onChange={change}
-                          label="Language"
-                        >
-                          {optional.map((item, idx) => <MenuItem key={`lang-${idx}`} value={item}>{item.toUpperCase()}</MenuItem>)}
-                        </Select> : <></>}
-                      </FormControl>
-                    </div>
-                  </div>
-                  <div className="row">
-                    <div className="col-md-12 mb-2 text-center" style={{ display: "flex", justifyContent: "center" }}>
-                      <Button
-                        variant="contained" color="primary"
-                        onClick={handleRedirect}
-                      >
-                        {loading ? (
-                          <>
-                            <CircularProgress
-                              color="inherit"
-                              style={{
-                                height: "1rem",
-                                width: "1rem",
-                                marginBottom: "-2px",
-                              }}
-                            />
-                          </>
-                        ) : (
-                          "Start Test"
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                  {error && (
-                    <div className="row">
-                        <div className="col-md-12 text-center" style={{ color: 'red', marginTop: '10px' }}>
-                        {error}
-                        </div>
-                    </div>
-                  )}
-                  {showCameraTest && (
-                    <div className="row" style={{ marginTop: "20px" }}>
-                      <div className="col-md-12">
-                        <CameraTest
-                          onCameraReady={() => {
-                            setValues(prev => ({ ...prev, showCameraTest: false, error: "" }));
-                            initializeWebcam();
-                          }}
-                          onError={(errorMsg) => {
-                            setValues(prev => ({ ...prev, error: errorMsg }));
-                          }}
-                        />
+                      </li>
+                      <li>Test will be auto submit after the time expires.</li>
+                      <li>Switching tabs is strictly prohibited and would be considered in the final evaluation.</li>
+                      <li>Answers once submitted cannot be unmarked but can be modified.</li>
+                      <li>Marked answers will not be Submitted at the End of test.</li>
+                      <li>
+                        <b>You will be awarded 1 mark for Correct Answer and there is no negative marking.</b>
+                      </li>
+                    </ul>
+                  </Paper>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <Paper className={classes.pr} style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                    <div className="row h-20">
+                      <div className="col-md-12 my-3 text-center display-3">
+                        <span id="clock" style={{ fontSize: "2rem" }}>
+                          {hour}:{minute < 10 ? `0${minute}` : minute}:
+                          {second < 10 ? `0${second}` : second}
+                        </span>
                       </div>
                     </div>
-                  )}
-                </Paper>
+                    <div className="row">
+                      <div className="col-12" style={{ display: 'flex', justifyContent: 'center' }}>
+                        <Webcam id="cam" style={{ width: "100%", maxWidth: "320px", height: "240px", margin: "0 auto", display: "block" }} />
+                      </div>
+                    </div>
+                    <div className="row">
+                      <div
+                        className="col-md-12"
+                        style={{ textAlign: "-webkit-center", display: "flex", justifyContent: "center" }}
+                      >
+                        <FormControl className={classes.formControl}>
+                          {optional.length !== 0 ? <InputLabel id="demo-simple-select-outlined-label">Language</InputLabel> : <></>}
+                          {optional.length !== 0 ? <Select
+                            labelId="demo-simple-select-outlined-label"
+                            id="demo-simple-select-outlined"
+                            value={lang || ""}
+                            onChange={change}
+                            label="Language"
+                          >
+                            {optional.map((item, idx) => <MenuItem key={`lang-${idx}`} value={item}>{item.toUpperCase()}</MenuItem>)}
+                          </Select> : <></>}
+                        </FormControl>
+                      </div>
+                    </div>
+                    <div className="row">
+                      <div className="col-md-12 mb-2 text-center" style={{ display: "flex", justifyContent: "center" }}>
+                        <Button
+                          variant="contained" color="primary"
+                          onClick={handleRedirect}
+                        >
+                          {loading ? (
+                            <>
+                              <CircularProgress
+                                color="inherit"
+                                style={{
+                                  height: "1rem",
+                                  width: "1rem",
+                                  marginBottom: "-2px",
+                                }}
+                              />
+                            </>
+                          ) : (
+                            "Start Test"
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                    {error && (
+                      <div className="row">
+                        <div className="col-md-12 text-center" style={{ color: 'red', marginTop: '10px' }}>
+                          {error}
+                        </div>
+                      </div>
+                    )}
+                    {showCameraTest && (
+                      <div className="row" style={{ marginTop: "20px" }}>
+                        <div className="col-md-12">
+                          <CameraTest
+                            onCameraReady={() => {
+                              setValues(prev => ({ ...prev, showCameraTest: false, error: "" }));
+                              initializeWebcam();
+                            }}
+                            onError={(errorMsg) => {
+                              setValues(prev => ({ ...prev, error: errorMsg }));
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </Paper>
+                </Grid>
               </Grid>
-            </Grid>
-          </Box>
-        </Container>
+            </Box>
+          </Container>
         </NavBar>
       </div>
     );
